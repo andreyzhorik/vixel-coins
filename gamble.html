@@ -27,25 +27,25 @@
             <article class="tier-card">
               <h4>Tier 1 – Safe</h4>
               <p>Win: 80% • Payout: 1.18x</p>
-              <p class="muted-text">EV: 0.944 • House edge ≈ 5.6%</p>
+              
             </article>
 
             <article class="tier-card">
               <h4>Tier 2 – Medium</h4>
               <p>Win: 47.5% • Payout: 2x</p>
-              <p class="muted-text">EV: 0.95 • House edge = 5%</p>
+              
             </article>
 
             <article class="tier-card">
               <h4>Tier 3 – High Risk</h4>
               <p>Win: 19% • Payout: 5x</p>
-              <p class="muted-text">EV: 0.95 • House edge = 5%</p>
+              
             </article>
 
             <article class="tier-card">
               <h4>Tier 4 – Extreme</h4>
               <p>Win: 4% • Payout: 20x</p>
-              <p class="muted-text">EV: 0.80 • House edge = 20% (brutal)</p>
+              
             </article>
           </div>
         </details>
@@ -124,9 +124,10 @@
 
         let nextCoins = availableCoins - bet;
         if (didWin) {
-          const winnings = Math.floor(bet * tier.payout);
-          nextCoins += winnings;
-          resultEl.textContent = `${tier.name}: You WON ${winnings} coins.`;
+          const payoutTotal = Math.max(bet, Math.round(bet * tier.payout));
+          nextCoins += payoutTotal;
+          const profit = payoutTotal - bet;
+          resultEl.textContent = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
         } else {
           resultEl.textContent = `${tier.name}: You lost ${bet} coins.`;
         }
