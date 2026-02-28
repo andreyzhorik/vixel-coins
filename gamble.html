@@ -78,6 +78,7 @@
         <div id="overlay-card" class="overlay-card">
           <div id="overlay-text" class="overlay-text">YOU WIN</div>
           <p id="overlay-subtext" class="overlay-subtext">Result message</p>
+          <button id="overlay-close" class="overlay-close" type="button">Close</button>
         </div>
       </div>
 
@@ -100,6 +101,7 @@
       const overlayText = document.getElementById('overlay-text');
       const overlaySubtext = document.getElementById('overlay-subtext');
       const overlayCard = document.getElementById('overlay-card');
+      const overlayClose = document.getElementById('overlay-close');
 
       let currentUser;
       let rollLocked = false;
@@ -115,10 +117,17 @@
           overlaySubtext.textContent = message;
           resultEl.textContent = message;
 
-          setTimeout(() => {
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
             resultOverlay.classList.add('hidden');
+            overlayClose.removeEventListener('click', finish);
             resolve();
-          }, 1300);
+          };
+
+          overlayClose.addEventListener('click', finish);
+          setTimeout(finish, 1600);
         });
       }
 
