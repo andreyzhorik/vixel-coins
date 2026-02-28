@@ -1,0 +1,146 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  font-family: Arial, Helvetica, sans-serif;
+  background: radial-gradient(circle at top, #351010, #130707 70%);
+  color: #ffe0e0;
+}
+
+.container {
+  width: min(94vw, 560px);
+  background: #1d0b0f;
+  border: 1px solid #5e1e2c;
+  border-radius: 16px;
+  padding: 1.75rem;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+h1 {
+  margin: 0;
+  color: #ff6b8d;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ff9bb0;
+}
+
+.subtitle {
+  margin-top: 0.6rem;
+  color: #ffc9d5;
+}
+
+.panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #2a1017;
+  border: 1px solid #52202e;
+}
+
+.stack {
+  display: grid;
+  gap: 0.7rem;
+}
+
+input {
+  width: 100%;
+  border: 1px solid #6f2c3b;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  color: #ffe0e0;
+  background: #13080b;
+}
+
+.button-group {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.main-button,
+.floating-button {
+  display: inline-block;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #be2a4c, #8d1832);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.main-button:hover,
+.floating-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(190, 42, 76, 0.35);
+}
+
+.score {
+  margin: 0.3rem 0;
+  font-weight: 700;
+}
+
+.result {
+  min-height: 1.5rem;
+  font-weight: 700;
+}
+
+.error-text {
+  min-height: 1.2rem;
+  color: #ff8ea8;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1.4rem;
+  color: #ff9bb0;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.leaderboard ol {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+  text-align: left;
+}
+
+.leaderboard li {
+  margin: 0.35rem 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.click-zone {
+  position: relative;
+  margin-top: 1rem;
+  height: 280px;
+  border-radius: 12px;
+  border: 1px dashed #6f2c3b;
+  background: #14080c;
+}
+
+.floating-button {
+  position: absolute;
+  width: auto;
+  min-width: 120px;
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gamble</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Gamble</h1>
+      <p class="subtitle">Risk 5 coins for a quick 50/50 chance.</p>
+
+      <section class="panel">
+        <p class="score">User: <span id="username">-</span></p>
+        <p class="score">Coins: <span id="coins">0</span></p>
+      </section>
+
+      <button id="gamble-btn" class="main-button">Gamble 5 Coins</button>
+      <p id="result" class="result"></p>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+      const usernameEl = document.getElementById('username');
+      const coinsEl = document.getElementById('coins');
+      const gambleBtn = document.getElementById('gamble-btn');
+      const resultEl = document.getElementById('result');
+
+      let currentUser;
+
+      gambleBtn.addEventListener('click', async () => {
+        if (!currentUser) return;
+
+        const currentCoins = Number(currentUser.coins || 0);
+        if (currentCoins < 5) {
+          resultEl.textContent = 'Not enough coins to gamble.';
+          return;
+        }
+
+        const won = Math.random() < 0.5;
+        const nextCoins = won ? currentCoins + 5 : currentCoins - 5;
+        currentUser = await updateCoins(currentUser.id, nextCoins);
+        coinsEl.textContent = nextCoins;
+        resultEl.textContent = won ? 'You won +5 coins!' : 'You lost -5 coins.';
+      });
+
+      async function init() {
+        currentUser = await ensureUser(true);
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+      }
+
+      init();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vixel Coins</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Vixel Coins</h1>
+      <p class="subtitle">Dark mode coin games</p>
+
+      <section id="username-gate" class="panel">
+        <h2>Start Here</h2>
+        <p>You must enter a username before playing.</p>
+        <form id="username-form" class="stack">
+          <input id="username-input" type="text" maxlength="20" placeholder="Enter username" required />
+          <button type="submit" class="main-button">Save Username</button>
+        </form>
+        <p id="gate-error" class="error-text"></p>
+      </section>
+
+      <section id="game-panel" class="panel hidden">
+        <p class="score">User: <span id="username">-</span></p>
+        <p class="score">Coins: <span id="coins">0</span></p>
+        <div class="button-group">
+          <a class="main-button" href="clicker.html">Pick Clicker</a>
+          <a class="main-button" href="gamble.html">Gamble</a>
+        </div>
+      </section>
+
+      <section class="panel leaderboard">
+        <h2>Leaderboard</h2>
+        <ol id="leaderboard-list"></ol>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+      const usernameGate = document.getElementById('username-gate');
+      const gamePanel = document.getElementById('game-panel');
+      const usernameForm = document.getElementById('username-form');
+      const usernameInput = document.getElementById('username-input');
+      const gateError = document.getElementById('gate-error');
+      const usernameEl = document.getElementById('username');
+      const coinsEl = document.getElementById('coins');
+      const leaderboardList = document.getElementById('leaderboard-list');
+
+      async function refreshMain() {
+        try {
+          const user = await ensureUser(false);
+          if (user) {
+            renderUserInfo(user, usernameEl, coinsEl);
+            usernameGate.classList.add('hidden');
+            gamePanel.classList.remove('hidden');
+          } else {
+            usernameGate.classList.remove('hidden');
+            gamePanel.classList.add('hidden');
+          }
+          await loadLeaderboard(leaderboardList);
+        } catch (error) {
+          gateError.textContent = 'Could not load data. Try again.';
+        }
+      }
+
+      usernameForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        gateError.textContent = '';
+        try {
+          const user = await setUsername(usernameInput.value);
+          renderUserInfo(user, usernameEl, coinsEl);
+          usernameInput.value = '';
+          usernameGate.classList.add('hidden');
+          gamePanel.classList.remove('hidden');
+          await loadLeaderboard(leaderboardList);
+        } catch (error) {
+          gateError.textContent = error.message;
+        }
+      });
+
+      refreshMain();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pick Clicker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Pick Clicker</h1>
+      <p class="subtitle">Catch the button before it moves.</p>
+
+      <section class="panel">
+        <p class="score">User: <span id="username">-</span></p>
+        <p class="score">Coins: <span id="coins">0</span></p>
+      </section>
+
+      <section class="click-zone" id="click-zone">
+        <button id="click-btn" class="floating-button">+1 Coin</button>
+      </section>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+      const usernameEl = document.getElementById('username');
+      const coinsEl = document.getElementById('coins');
+      const clickBtn = document.getElementById('click-btn');
+      const clickZone = document.getElementById('click-zone');
+
+      let currentUser;
+
+      function moveButtonRandom() {
+        const zoneWidth = clickZone.clientWidth;
+        const zoneHeight = clickZone.clientHeight;
+        const btnWidth = clickBtn.offsetWidth;
+        const btnHeight = clickBtn.offsetHeight;
+        const maxX = Math.max(zoneWidth - btnWidth, 0);
+        const maxY = Math.max(zoneHeight - btnHeight, 0);
+        const x = Math.floor(Math.random() * (maxX + 1));
+        const y = Math.floor(Math.random() * (maxY + 1));
+
+        clickBtn.style.left = `${x}px`;
+        clickBtn.style.top = `${y}px`;
+      }
+
+      clickBtn.addEventListener('click', async () => {
+        if (!currentUser) return;
+        const nextCoins = Number(currentUser.coins || 0) + 1;
+        currentUser = await updateCoins(currentUser.id, nextCoins);
+        coinsEl.textContent = nextCoins;
+        moveButtonRandom();
+      });
+
+      window.addEventListener('resize', moveButtonRandom);
+
+      async function init() {
+        currentUser = await ensureUser(true);
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+        moveButtonRandom();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
