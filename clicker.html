@@ -14,11 +14,11 @@
       <section class="panel">
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
-        <p class="muted-text">Coins auto-refresh every 2 seconds.</p>
+        <p class="muted-text">Coins auto-refresh every 2 seconds. Press <strong>Space</strong> to hit the target.</p>
       </section>
 
       <section class="click-zone" id="click-zone">
-        <button id="click-btn" class="floating-button target-button" type="button" aria-label="Click target"></button>
+        <button id="click-btn" class="floating-button target-button" type="button" aria-label="Click target" tabindex="0"></button>
       </section>
 
       <a class="back-link" href="index.html">← Back to Main</a>
@@ -46,6 +46,7 @@
 
         clickBtn.style.left = `${x}px`;
         clickBtn.style.top = `${y}px`;
+        clickBtn.focus({ preventScroll: true });
       }
 
       function getClickReward(coins) {
@@ -69,6 +70,17 @@
       });
 
       window.addEventListener('resize', moveButtonRandom);
+
+
+      document.addEventListener('keydown', (event) => {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
+
+        if (event.code === 'Space') {
+          event.preventDefault();
+          clickBtn.click();
+        }
+      });
 
       async function init() {
         currentUser = await ensureUser(true);

@@ -75,7 +75,10 @@
 
 
       <div id="result-overlay" class="result-overlay hidden" aria-live="polite">
-        <div id="overlay-text" class="overlay-text">YOU WIN</div>
+        <div id="overlay-card" class="overlay-card">
+          <div id="overlay-text" class="overlay-text">YOU WIN</div>
+          <p id="overlay-subtext" class="overlay-subtext">Result message</p>
+        </div>
       </div>
 
     <script src="app.js"></script>
@@ -95,6 +98,8 @@
       const resultEl = document.getElementById('result');
       const resultOverlay = document.getElementById('result-overlay');
       const overlayText = document.getElementById('overlay-text');
+      const overlaySubtext = document.getElementById('overlay-subtext');
+      const overlayCard = document.getElementById('overlay-card');
 
       let currentUser;
       let rollLocked = false;
@@ -103,13 +108,17 @@
         return new Promise((resolve) => {
           resultOverlay.classList.remove('hidden', 'overlay-win', 'overlay-loss');
           resultOverlay.classList.add(didWin ? 'overlay-win' : 'overlay-loss');
+          overlayCard.classList.remove('overlay-pop');
+          void overlayCard.offsetWidth;
+          overlayCard.classList.add('overlay-pop');
           overlayText.textContent = didWin ? 'YOU WIN' : 'YOU LOSE';
+          overlaySubtext.textContent = message;
           resultEl.textContent = message;
 
           setTimeout(() => {
             resultOverlay.classList.add('hidden');
             resolve();
-          }, 1200);
+          }, 1300);
         });
       }
 

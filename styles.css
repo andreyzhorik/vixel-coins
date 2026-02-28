@@ -275,3 +275,42 @@ label {
 .overlay-loss .overlay-text {
   background: linear-gradient(140deg, #f02757, #a60d33);
 }
+
+.overlay-card {
+  width: min(92vw, 560px);
+  border-radius: 16px;
+  padding: 1.2rem 1rem;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.overlay-subtext {
+  margin: 0.55rem 0 0;
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.overlay-win .overlay-card {
+  background: linear-gradient(145deg, rgba(33, 201, 103, 0.95), rgba(18, 132, 61, 0.95));
+}
+
+.overlay-loss .overlay-card {
+  background: linear-gradient(145deg, rgba(240, 39, 87, 0.96), rgba(166, 13, 51, 0.96));
+}
+
+.overlay-pop {
+  animation: overlayPop 0.35s ease;
+}
+
+@keyframes overlayPop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
