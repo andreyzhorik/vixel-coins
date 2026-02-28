@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pick Clicker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Pick Clicker</h1>
+      <p>Click to earn coins.</p>
+
+      <p class="score">Coins: <span id="coins">0</span></p>
+      <button id="click-btn" class="main-button">+1 Coin</button>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <script>
+      const coinsEl = document.getElementById('coins');
+      const clickBtn = document.getElementById('click-btn');
+      let coins = 0;
+
+      clickBtn.addEventListener('click', () => {
+        coins += 1;
+        coinsEl.textContent = coins;
+      });
+    </script>
+  </body>
+</html>
