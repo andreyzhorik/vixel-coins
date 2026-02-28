@@ -11,8 +11,13 @@ function getSession() {
   };
 }
 
+function clearSession() {
+  localStorage.removeItem(STORAGE_KEYS.userId);
+  localStorage.removeItem(STORAGE_KEYS.username);
+}
+
 function saveSession(user) {
-  localStorage.setItem(STORAGE_KEYS.userId, user.id);
+  localStorage.setItem(STORAGE_KEYS.userId, String(user.id));
   localStorage.setItem(STORAGE_KEYS.username, user.username);
 }
 
@@ -53,17 +58,16 @@ async function ensureUser(required = false) {
   const session = getSession();
   if (session.userId && session.username) {
     try {
-      const user = await getUserById(session.userId);
-      return user;
+      return await getUserById(session.userId);
     } catch (_) {
-      localStorage.removeItem(STORAGE_KEYS.userId);
-      localStorage.removeItem(STORAGE_KEYS.username);
+      clearSession();
     }
   }
 
   if (required) {
     window.location.href = 'index.html';
   }
+
   return null;
 }
 
@@ -87,20 +91,47 @@ function renderUserInfo(user, usernameEl, coinsEl) {
   coinsEl.textContent = Number(user.coins || 0);
 }
 
-async function loadLeaderboard(listEl) {
+async function loadLeaderboard(listEl, currentUsername = '') {
   const users = await fetchJson(API_BASE);
   users.sort((a, b) => Number(b.coins || 0) - Number(a.coins || 0));
+
   listEl.innerHTML = '';
+  const topUsers = users.slice(0, 10);
 
-  users.slice(0, 10).forEach((u, index) => {
-    const item = document.createElement('li');
-    item.textContent = `#${index + 1} ${u.username} — ${Number(u.coins || 0)} coins`;
-    listEl.appendChild(item);
-  });
-
-  if (!users.length) {
+  if (!topUsers.length) {
     const item = document.createElement('li');
     item.textContent = 'No players yet.';
     listEl.appendChild(item);
+    return;
   }
+
+  topUsers.forEach((u, index) => {
+    const item = document.createElement('li');
+    const isCurrent = currentUsername && currentUsername.toLowerCase() === String(u.username).toLowerCase();
+    item.textContent = `#${index + 1} ${u.username} — ${Number(u.coins || 0)} coins`;
+    if (isCurrent) item.classList.add('current-user-row');
+    listEl.appendChild(item);
+  });
+}
+
+function startUserCoinSync(userId, onUpdate, intervalMs = 2000) {
+  let active = true;
+
+  const tick = async () => {
+    if (!active) return;
+    try {
+      const latestUser = await getUserById(userId);
+      onUpdate(latestUser);
+    } catch (_) {
+      // Keep running; transient API issues should not break the UI.
+    }
+  };
+
+  const timer = setInterval(tick, intervalMs);
+  tick();
+
+  return () => {
+    active = false;
+    clearInterval(timer);
+  };
 }

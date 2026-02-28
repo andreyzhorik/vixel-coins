@@ -9,15 +9,16 @@
   <body>
     <main class="container">
       <h1>Pick Clicker</h1>
-      <p class="subtitle">Catch the button before it moves.</p>
+      <p class="subtitle">Button moves in random spots inside the box.</p>
 
       <section class="panel">
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
+        <p class="muted-text">Coins auto-refresh every 2 seconds.</p>
       </section>
 
       <section class="click-zone" id="click-zone">
-        <button id="click-btn" class="floating-button">+1 Coin</button>
+        <button id="click-btn" class="floating-button" type="button">+1 Coin</button>
       </section>
 
       <a class="back-link" href="index.html">← Back to Main</a>
@@ -37,6 +38,7 @@
         const zoneHeight = clickZone.clientHeight;
         const btnWidth = clickBtn.offsetWidth;
         const btnHeight = clickBtn.offsetHeight;
+
         const maxX = Math.max(zoneWidth - btnWidth, 0);
         const maxY = Math.max(zoneHeight - btnHeight, 0);
         const x = Math.floor(Math.random() * (maxX + 1));
@@ -50,7 +52,7 @@
         if (!currentUser) return;
         const nextCoins = Number(currentUser.coins || 0) + 1;
         currentUser = await updateCoins(currentUser.id, nextCoins);
-        coinsEl.textContent = nextCoins;
+        renderUserInfo(currentUser, usernameEl, coinsEl);
         moveButtonRandom();
       });
 
@@ -59,6 +61,12 @@
       async function init() {
         currentUser = await ensureUser(true);
         renderUserInfo(currentUser, usernameEl, coinsEl);
+
+        startUserCoinSync(currentUser.id, (latest) => {
+          currentUser = latest;
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+        }, 2000);
+
         moveButtonRandom();
       }
 

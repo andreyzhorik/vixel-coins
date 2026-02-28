@@ -11,43 +11,44 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  font-family: Arial, Helvetica, sans-serif;
-  background: radial-gradient(circle at top, #351010, #130707 70%);
-  color: #ffe0e0;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  background: radial-gradient(circle at top, #3e0f17, #18080c 55%, #100507 100%);
+  color: #ffe4e9;
 }
 
 .container {
-  width: min(94vw, 560px);
-  background: #1d0b0f;
-  border: 1px solid #5e1e2c;
-  border-radius: 16px;
-  padding: 1.75rem;
+  width: min(95vw, 620px);
+  background: linear-gradient(180deg, #241015, #1a0b10);
+  border: 1px solid #6a2434;
+  border-radius: 18px;
+  padding: 1.5rem;
   text-align: center;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
 }
 
 h1 {
   margin: 0;
-  color: #ff6b8d;
+  letter-spacing: 0.4px;
+  color: #ff7696;
 }
 
 h2 {
   margin: 0;
   font-size: 1.1rem;
-  color: #ff9bb0;
+  color: #ffadc0;
 }
 
 .subtitle {
-  margin-top: 0.6rem;
-  color: #ffc9d5;
+  margin-top: 0.55rem;
+  color: #ffd0da;
 }
 
 .panel {
   margin-top: 1rem;
   padding: 1rem;
   border-radius: 12px;
-  background: #2a1017;
-  border: 1px solid #52202e;
+  background: #31141d;
+  border: 1px solid #672735;
 }
 
 .stack {
@@ -57,22 +58,23 @@ h2 {
 
 input {
   width: 100%;
-  border: 1px solid #6f2c3b;
+  border: 1px solid #8b3347;
   border-radius: 10px;
   padding: 0.75rem;
   font-size: 1rem;
-  color: #ffe0e0;
-  background: #13080b;
+  color: #ffe9ee;
+  background: #1a090e;
 }
 
 .button-group {
   margin-top: 0.5rem;
   display: grid;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 
 .main-button,
-.floating-button {
+.floating-button,
+.alt-button {
   display: inline-block;
   width: 100%;
   border: none;
@@ -81,20 +83,26 @@ input {
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #be2a4c, #8d1832);
+  background: linear-gradient(140deg, #d13258, #941f3a);
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.alt-button {
+  background: linear-gradient(140deg, #8f2c43, #692034);
 }
 
 .main-button:hover,
-.floating-button:hover {
+.floating-button:hover,
+.alt-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(190, 42, 76, 0.35);
+  box-shadow: 0 10px 20px rgba(209, 50, 88, 0.32);
+  filter: brightness(1.05);
 }
 
 .score {
-  margin: 0.3rem 0;
+  margin: 0.25rem 0;
   font-weight: 700;
 }
 
@@ -103,27 +111,38 @@ input {
   font-weight: 700;
 }
 
+.muted-text {
+  margin: 0.45rem 0 0;
+  color: #ffb8c7;
+  font-size: 0.92rem;
+}
+
 .error-text {
   min-height: 1.2rem;
-  color: #ff8ea8;
+  color: #ff97ae;
 }
 
 .back-link {
   display: inline-block;
-  margin-top: 1.4rem;
-  color: #ff9bb0;
+  margin-top: 1.2rem;
+  color: #ffb9c8;
   text-decoration: none;
   font-weight: 700;
 }
 
 .leaderboard ol {
   margin: 0.75rem 0 0;
-  padding-left: 1.2rem;
+  padding-left: 1.3rem;
   text-align: left;
 }
 
 .leaderboard li {
-  margin: 0.35rem 0;
+  margin: 0.33rem 0;
+}
+
+.current-user-row {
+  color: #ffd7df;
+  font-weight: 700;
 }
 
 .hidden {
@@ -133,10 +152,11 @@ input {
 .click-zone {
   position: relative;
   margin-top: 1rem;
-  height: 280px;
-  border-radius: 12px;
-  border: 1px dashed #6f2c3b;
-  background: #14080c;
+  height: 300px;
+  border-radius: 14px;
+  border: 1px dashed #8c3448;
+  background: radial-gradient(circle at center, #2a1118, #1a090d);
+  overflow: hidden;
 }
 
 .floating-button {
