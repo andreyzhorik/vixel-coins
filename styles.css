@@ -246,3 +246,32 @@ label {
 .details-card[open] summary {
   margin-bottom: 0.65rem;
 }
+
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.overlay-text {
+  font-size: clamp(2rem, 9vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1rem 1.4rem;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  color: #fff;
+}
+
+.overlay-win .overlay-text {
+  background: linear-gradient(140deg, #24cc66, #12843d);
+}
+
+.overlay-loss .overlay-text {
+  background: linear-gradient(140deg, #f02757, #a60d33);
+}

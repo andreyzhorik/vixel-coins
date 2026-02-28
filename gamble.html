@@ -73,6 +73,11 @@
       <a class="back-link" href="index.html">← Back to Main</a>
     </main>
 
+
+      <div id="result-overlay" class="result-overlay hidden" aria-live="polite">
+        <div id="overlay-text" class="overlay-text">YOU WIN</div>
+      </div>
+
     <script src="app.js"></script>
     <script>
       const TIERS = {
@@ -88,8 +93,25 @@
       const tierSelect = document.getElementById('tier-select');
       const betAmountInput = document.getElementById('bet-amount');
       const resultEl = document.getElementById('result');
+      const resultOverlay = document.getElementById('result-overlay');
+      const overlayText = document.getElementById('overlay-text');
 
       let currentUser;
+      let rollLocked = false;
+
+      function showFrontResult(didWin, message) {
+        return new Promise((resolve) => {
+          resultOverlay.classList.remove('hidden', 'overlay-win', 'overlay-loss');
+          resultOverlay.classList.add(didWin ? 'overlay-win' : 'overlay-loss');
+          overlayText.textContent = didWin ? 'YOU WIN' : 'YOU LOSE';
+          resultEl.textContent = message;
+
+          setTimeout(() => {
+            resultOverlay.classList.add('hidden');
+            resolve();
+          }, 1200);
+        });
+      }
 
       function parseValidBet(value, availableCoins) {
         const bet = Number(value);
@@ -109,7 +131,7 @@
 
       betForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!currentUser) return;
+        if (!currentUser || rollLocked) return;
 
         const availableCoins = Number(currentUser.coins || 0);
         const validation = parseValidBet(betAmountInput.value, availableCoins);
@@ -118,22 +140,30 @@
           return;
         }
 
-        const tier = TIERS[tierSelect.value];
-        const didWin = Math.random() < tier.winChance;
-        const bet = validation.bet;
+        rollLocked = true;
+        try {
+          const tier = TIERS[tierSelect.value];
+          const didWin = Math.random() < tier.winChance;
+          const bet = validation.bet;
 
-        let nextCoins = availableCoins - bet;
-        if (didWin) {
-          const payoutTotal = Math.max(bet, Math.round(bet * tier.payout));
-          nextCoins += payoutTotal;
-          const profit = payoutTotal - bet;
-          resultEl.textContent = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
-        } else {
-          resultEl.textContent = `${tier.name}: You lost ${bet} coins.`;
+          let nextCoins = availableCoins - bet;
+          if (didWin) {
+            const payoutTotal = Math.max(bet, Math.round(bet * tier.payout));
+            nextCoins += payoutTotal;
+            const profit = payoutTotal - bet;
+            const message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
+            currentUser = await updateCoins(currentUser.id, nextCoins);
+            renderUserInfo(currentUser, usernameEl, coinsEl);
+            await showFrontResult(true, message);
+          } else {
+            const message = `${tier.name}: You lost ${bet} coins.`;
+            currentUser = await updateCoins(currentUser.id, nextCoins);
+            renderUserInfo(currentUser, usernameEl, coinsEl);
+            await showFrontResult(false, message);
+          }
+        } finally {
+          rollLocked = false;
         }
-
-        currentUser = await updateCoins(currentUser.id, nextCoins);
-        renderUserInfo(currentUser, usernameEl, coinsEl);
       });
 
       async function init() {

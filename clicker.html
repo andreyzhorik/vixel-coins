@@ -48,9 +48,21 @@
         clickBtn.style.top = `${y}px`;
       }
 
+      function getClickReward(coins) {
+        if (coins >= 1000) return 0.1;
+        if (coins >= 100) return 0.5;
+        return 1;
+      }
+
+      function roundCoins(value) {
+        return Math.round(value * 10) / 10;
+      }
+
       clickBtn.addEventListener('click', async () => {
         if (!currentUser) return;
-        const nextCoins = Number(currentUser.coins || 0) + 1;
+        const currentCoins = Number(currentUser.coins || 0);
+        const reward = getClickReward(currentCoins);
+        const nextCoins = roundCoins(currentCoins + reward);
         currentUser = await updateCoins(currentUser.id, nextCoins);
         renderUserInfo(currentUser, usernameEl, coinsEl);
         moveButtonRandom();
