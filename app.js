@@ -21,6 +21,11 @@ function saveSession(user) {
   localStorage.setItem(STORAGE_KEYS.username, user.username);
 }
 
+function hasLockedUsername() {
+  const session = getSession();
+  return Boolean(session.userId && session.username);
+}
+
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -60,7 +65,10 @@ async function ensureUser(required = false) {
     try {
       return await getUserById(session.userId);
     } catch (_) {
-      clearSession();
+      if (required) {
+        window.location.href = 'index.html';
+      }
+      return null;
     }
   }
 
@@ -72,6 +80,10 @@ async function ensureUser(required = false) {
 }
 
 async function setUsername(username) {
+  if (hasLockedUsername()) {
+    throw new Error('Username is already locked for this browser.');
+  }
+
   const clean = username.trim();
   if (!clean) {
     throw new Error('Username is required.');
@@ -123,7 +135,7 @@ function startUserCoinSync(userId, onUpdate, intervalMs = 2000) {
       const latestUser = await getUserById(userId);
       onUpdate(latestUser);
     } catch (_) {
-      // Keep running; transient API issues should not break the UI.
+      // Keep running for transient API issues.
     }
   };
 

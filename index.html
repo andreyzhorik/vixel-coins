@@ -12,13 +12,12 @@
       <p class="subtitle">Dark red arcade mode</p>
 
       <section id="username-gate" class="panel">
-        <h2>Start Here</h2>
-        <p>You must enter a username before playing.</p>
+        <h2>One-time Username Setup</h2>
+        <p>Set your username once. After that, this browser always opens your home screen.</p>
         <form id="username-form" class="stack">
           <input id="username-input" type="text" maxlength="20" placeholder="Enter username" required />
           <button type="submit" class="main-button">Save Username</button>
         </form>
-        <p id="saved-name" class="muted-text"></p>
         <p id="gate-error" class="error-text"></p>
       </section>
 
@@ -29,7 +28,6 @@
         <div class="button-group">
           <a class="main-button" href="clicker.html">Pick Clicker</a>
           <a class="main-button" href="gamble.html">Gamble</a>
-          <button id="switch-user-btn" class="alt-button" type="button">Switch Username</button>
         </div>
       </section>
 
@@ -46,11 +44,9 @@
       const usernameForm = document.getElementById('username-form');
       const usernameInput = document.getElementById('username-input');
       const gateError = document.getElementById('gate-error');
-      const savedNameEl = document.getElementById('saved-name');
       const usernameEl = document.getElementById('username');
       const coinsEl = document.getElementById('coins');
       const leaderboardList = document.getElementById('leaderboard-list');
-      const switchUserBtn = document.getElementById('switch-user-btn');
 
       let currentUser = null;
       let stopCoinSync = null;
@@ -59,16 +55,6 @@
       function showGate(show) {
         usernameGate.classList.toggle('hidden', !show);
         gamePanel.classList.toggle('hidden', show);
-      }
-
-      function setupSavedUsernameHint() {
-        const session = getSession();
-        if (session.username) {
-          usernameInput.value = session.username;
-          savedNameEl.textContent = `Saved username: ${session.username}`;
-        } else {
-          savedNameEl.textContent = '';
-        }
       }
 
       function startRefreshLoops() {
@@ -94,7 +80,6 @@
           currentUser = await setUsername(usernameInput.value);
           renderUserInfo(currentUser, usernameEl, coinsEl);
           showGate(false);
-          setupSavedUsernameHint();
           await loadLeaderboard(leaderboardList, currentUser.username);
           startRefreshLoops();
         } catch (error) {
@@ -102,14 +87,7 @@
         }
       });
 
-      switchUserBtn.addEventListener('click', () => {
-        showGate(true);
-        setupSavedUsernameHint();
-      });
-
       async function init() {
-        setupSavedUsernameHint();
-
         try {
           currentUser = await ensureUser(false);
           if (currentUser) {
@@ -118,6 +96,7 @@
             startRefreshLoops();
           } else {
             showGate(true);
+            usernameInput.value = '';
           }
 
           await loadLeaderboard(leaderboardList, currentUser ? currentUser.username : '');
