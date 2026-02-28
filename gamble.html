@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gamble</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Gamble</h1>
+      <p>Press the button for a quick win or loss.</p>
+
+      <p class="score">Coins: <span id="coins">10</span></p>
+      <button id="gamble-btn" class="main-button">Gamble 5 Coins</button>
+      <p id="result" class="result"></p>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <script>
+      const coinsEl = document.getElementById('coins');
+      const gambleBtn = document.getElementById('gamble-btn');
+      const resultEl = document.getElementById('result');
+      let coins = 10;
+
+      gambleBtn.addEventListener('click', () => {
+        if (coins < 5) {
+          resultEl.textContent = 'Not enough coins to gamble.';
+          return;
+        }
+
+        const won = Math.random() < 0.5;
+        if (won) {
+          coins += 5;
+          resultEl.textContent = 'You won +5 coins!';
+        } else {
+          coins -= 5;
+          resultEl.textContent = 'You lost -5 coins.';
+        }
+
+        coinsEl.textContent = coins;
+      });
+    </script>
+  </body>
+</html>
