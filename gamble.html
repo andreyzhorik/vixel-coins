@@ -27,25 +27,21 @@
             <article class="tier-card">
               <h4>Tier 1 – Safe</h4>
               <p>Win: 80% • Payout: 1.18x</p>
-              
             </article>
 
             <article class="tier-card">
               <h4>Tier 2 – Medium</h4>
               <p>Win: 47.5% • Payout: 2x</p>
-              
             </article>
 
             <article class="tier-card">
               <h4>Tier 3 – High Risk</h4>
               <p>Win: 19% • Payout: 5x</p>
-              
             </article>
 
             <article class="tier-card">
               <h4>Tier 4 – Extreme</h4>
               <p>Win: 4% • Payout: 20x</p>
-              
             </article>
           </div>
         </details>
@@ -73,14 +69,13 @@
       <a class="back-link" href="index.html">← Back to Main</a>
     </main>
 
-
-      <div id="result-overlay" class="result-overlay hidden" aria-live="polite">
-        <div id="overlay-card" class="overlay-card">
-          <div id="overlay-text" class="overlay-text">YOU WIN</div>
-          <p id="overlay-subtext" class="overlay-subtext">Result message</p>
-          <button id="overlay-close" class="overlay-close" type="button">Close</button>
-        </div>
+    <div id="result-overlay" class="result-overlay hidden" aria-live="polite" aria-hidden="true">
+      <div id="overlay-card" class="overlay-card">
+        <div id="overlay-text" class="overlay-text">YOU WIN</div>
+        <p id="overlay-subtext" class="overlay-subtext">Result message</p>
+        <button id="overlay-close" class="overlay-close" type="button">Close</button>
       </div>
+    </div>
 
     <script src="app.js"></script>
     <script>
@@ -106,28 +101,37 @@
       let currentUser;
       let rollLocked = false;
 
-      function showFrontResult(didWin, message) {
+      function showResultPopup({ won, message }) {
         return new Promise((resolve) => {
-          resultOverlay.classList.remove('hidden', 'overlay-win', 'overlay-loss');
-          resultOverlay.classList.add(didWin ? 'overlay-win' : 'overlay-loss');
-          overlayCard.classList.remove('overlay-pop');
-          void overlayCard.offsetWidth;
-          overlayCard.classList.add('overlay-pop');
-          overlayText.textContent = didWin ? 'YOU WIN' : 'YOU LOSE';
-          overlaySubtext.textContent = message;
-          resultEl.textContent = message;
+          let completed = false;
 
-          let done = false;
-          const finish = () => {
-            if (done) return;
-            done = true;
+          const cleanup = () => {
+            if (completed) return;
+            completed = true;
             resultOverlay.classList.add('hidden');
-            overlayClose.removeEventListener('click', finish);
+            resultOverlay.setAttribute('aria-hidden', 'true');
+            resultOverlay.classList.remove('overlay-win', 'overlay-loss');
+            overlayClose.removeEventListener('click', onClose);
             resolve();
           };
 
-          overlayClose.addEventListener('click', finish);
-          setTimeout(finish, 1600);
+          const onClose = () => cleanup();
+
+          overlayText.textContent = won ? 'YOU WIN' : 'YOU LOSE';
+          overlaySubtext.textContent = message;
+          resultEl.textContent = message;
+
+          resultOverlay.classList.remove('hidden');
+          resultOverlay.setAttribute('aria-hidden', 'false');
+          resultOverlay.classList.add(won ? 'overlay-win' : 'overlay-loss');
+
+          overlayCard.classList.remove('overlay-pop');
+          requestAnimationFrame(() => {
+            overlayCard.classList.add('overlay-pop');
+          });
+
+          overlayClose.addEventListener('click', onClose, { once: true });
+          setTimeout(cleanup, 1600);
         });
       }
 
@@ -165,20 +169,20 @@
           const bet = validation.bet;
 
           let nextCoins = availableCoins - bet;
+          let message;
+
           if (didWin) {
             const payoutTotal = Math.max(bet, Math.round(bet * tier.payout));
             nextCoins += payoutTotal;
             const profit = payoutTotal - bet;
-            const message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
-            currentUser = await updateCoins(currentUser.id, nextCoins);
-            renderUserInfo(currentUser, usernameEl, coinsEl);
-            await showFrontResult(true, message);
+            message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
           } else {
-            const message = `${tier.name}: You lost ${bet} coins.`;
-            currentUser = await updateCoins(currentUser.id, nextCoins);
-            renderUserInfo(currentUser, usernameEl, coinsEl);
-            await showFrontResult(false, message);
+            message = `${tier.name}: You lost ${bet} coins.`;
           }
+
+          currentUser = await updateCoins(currentUser.id, nextCoins);
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+          await showResultPopup({ won: didWin, message });
         } finally {
           rollLocked = false;
         }
