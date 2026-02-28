@@ -9,7 +9,7 @@
   <body>
     <main class="container">
       <h1>Gamble</h1>
-      <p class="subtitle">Choose your risk tier and valid bet amount.</p>
+      <p class="subtitle">Simple mode: pick risk, pick bet, roll.</p>
 
       <section class="panel">
         <p class="score">User: <span id="username">-</span></p>
@@ -18,51 +18,37 @@
       </section>
 
       <section class="panel left-panel">
-        <h2>House Edge Target: 5%</h2>
-        <p class="muted-text">Expected Return: <strong>0.95 per 1 coin bet</strong></p>
+        <h2>Quick Info</h2>
+        <p class="muted-text">House Edge Target: 5% • Expected Return: 0.95 per 1 coin bet</p>
 
-        <h3 class="mini-title">Win Chart (per 1 coin bet)</h3>
-        <div class="tier-grid">
-          <article class="tier-card">
-            <h4>Tier 1 – Safe</h4>
-            <p>Win Chance: <strong>80%</strong></p>
-            <p>Payout: <strong>1.18x</strong></p>
-            <p>Lose Chance: 20%</p>
-            <p>Lose Payout: 0</p>
-            <p class="muted-text">Expected Value = 0.80 × 1.18 = 0.944</p>
-            <p class="muted-text">House edge ≈ 5.6%</p>
-          </article>
+        <details class="details-card">
+          <summary>Show Win Chart</summary>
+          <div class="tier-grid">
+            <article class="tier-card">
+              <h4>Tier 1 – Safe</h4>
+              <p>Win: 80% • Payout: 1.18x</p>
+              <p class="muted-text">EV: 0.944 • House edge ≈ 5.6%</p>
+            </article>
 
-          <article class="tier-card">
-            <h4>Tier 2 – Medium</h4>
-            <p>Win Chance: <strong>47.5%</strong></p>
-            <p>Payout: <strong>2x</strong></p>
-            <p>Lose Chance: 52.5%</p>
-            <p>Lose Payout: 0</p>
-            <p class="muted-text">Expected Value = 0.475 × 2 = 0.95</p>
-            <p class="muted-text">House edge = 5%</p>
-          </article>
+            <article class="tier-card">
+              <h4>Tier 2 – Medium</h4>
+              <p>Win: 47.5% • Payout: 2x</p>
+              <p class="muted-text">EV: 0.95 • House edge = 5%</p>
+            </article>
 
-          <article class="tier-card">
-            <h4>Tier 3 – High Risk</h4>
-            <p>Win Chance: <strong>19%</strong></p>
-            <p>Payout: <strong>5x</strong></p>
-            <p>Lose Chance: 81%</p>
-            <p>Lose Payout: 0</p>
-            <p class="muted-text">Expected Value = 0.19 × 5 = 0.95</p>
-            <p class="muted-text">House edge = 5%</p>
-          </article>
+            <article class="tier-card">
+              <h4>Tier 3 – High Risk</h4>
+              <p>Win: 19% • Payout: 5x</p>
+              <p class="muted-text">EV: 0.95 • House edge = 5%</p>
+            </article>
 
-          <article class="tier-card">
-            <h4>Tier 4 – Extreme</h4>
-            <p>Win Chance: <strong>4%</strong></p>
-            <p>Payout: <strong>20x</strong></p>
-            <p>Lose Chance: 96%</p>
-            <p>Lose Payout: 0</p>
-            <p class="muted-text">Expected Value = 0.04 × 20 = 0.80</p>
-            <p class="muted-text">House edge = 20% (intentionally brutal)</p>
-          </article>
-        </div>
+            <article class="tier-card">
+              <h4>Tier 4 – Extreme</h4>
+              <p>Win: 4% • Payout: 20x</p>
+              <p class="muted-text">EV: 0.80 • House edge = 20% (brutal)</p>
+            </article>
+          </div>
+        </details>
       </section>
 
       <section class="panel left-panel">
@@ -111,11 +97,9 @@
         if (!Number.isFinite(bet) || !Number.isInteger(bet)) {
           return { valid: false, error: 'Bet must be a whole number.' };
         }
-
         if (bet < 1) {
           return { valid: false, error: 'Bet must be at least 1 coin.' };
         }
-
         if (bet > availableCoins) {
           return { valid: false, error: 'Bet cannot be more than your current coins.' };
         }
@@ -142,7 +126,7 @@
         if (didWin) {
           const winnings = Math.floor(bet * tier.payout);
           nextCoins += winnings;
-          resultEl.textContent = `${tier.name}: You WON! Bet ${bet}, payout ${winnings}.`;
+          resultEl.textContent = `${tier.name}: You WON ${winnings} coins.`;
         } else {
           resultEl.textContent = `${tier.name}: You lost ${bet} coins.`;
         }
@@ -155,14 +139,10 @@
         currentUser = await ensureUser(true);
         renderUserInfo(currentUser, usernameEl, coinsEl);
 
-        startUserCoinSync(
-          currentUser.id,
-          (latest) => {
-            currentUser = latest;
-            renderUserInfo(currentUser, usernameEl, coinsEl);
-          },
-          2000
-        );
+        startUserCoinSync(currentUser.id, (latest) => {
+          currentUser = latest;
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+        }, 2000);
       }
 
       init();
