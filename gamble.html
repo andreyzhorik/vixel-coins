@@ -73,7 +73,6 @@
       <div id="overlay-card" class="overlay-card">
         <div id="overlay-text" class="overlay-text">YOU WIN</div>
         <p id="overlay-subtext" class="overlay-subtext">Result message</p>
-        <button id="overlay-close" class="overlay-close" type="button">Close</button>
       </div>
     </div>
 
@@ -96,7 +95,6 @@
       const overlayText = document.getElementById('overlay-text');
       const overlaySubtext = document.getElementById('overlay-subtext');
       const overlayCard = document.getElementById('overlay-card');
-      const overlayClose = document.getElementById('overlay-close');
 
       let currentUser;
       let rollLocked = false;
@@ -111,11 +109,11 @@
             resultOverlay.classList.add('hidden');
             resultOverlay.setAttribute('aria-hidden', 'true');
             resultOverlay.classList.remove('overlay-win', 'overlay-loss');
-            overlayClose.removeEventListener('click', onClose);
+            resultOverlay.removeEventListener('pointerdown', onTouchOrClick);
             resolve();
           };
 
-          const onClose = () => cleanup();
+          const onTouchOrClick = () => cleanup();
 
           overlayText.textContent = won ? 'YOU WIN' : 'YOU LOSE';
           overlaySubtext.textContent = message;
@@ -130,8 +128,7 @@
             overlayCard.classList.add('overlay-pop');
           });
 
-          overlayClose.addEventListener('click', onClose, { once: true });
-          setTimeout(cleanup, 1600);
+          resultOverlay.addEventListener('pointerdown', onTouchOrClick, { once: true });
         });
       }
 
