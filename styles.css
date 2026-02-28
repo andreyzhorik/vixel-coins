@@ -180,3 +180,50 @@ input {
 .target-button:hover {
   transform: scale(1.04);
 }
+
+.left-panel {
+  text-align: left;
+}
+
+.mini-title {
+  margin: 0.5rem 0 0.75rem;
+  color: #ffb9c8;
+  font-size: 1rem;
+}
+
+.tier-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+
+.tier-card {
+  background: #2a0f17;
+  border: 1px solid #6e2538;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.tier-card h4 {
+  margin: 0 0 0.35rem;
+  color: #ff9fb5;
+}
+
+.tier-card p {
+  margin: 0.2rem 0;
+}
+
+select {
+  width: 100%;
+  border: 1px solid #8b3347;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  color: #ffe9ee;
+  background: #1a090e;
+}
+
+label {
+  font-weight: 600;
+  color: #ffd2dc;
+}
