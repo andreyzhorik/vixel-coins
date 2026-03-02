@@ -14,7 +14,8 @@
       <section class="panel">
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
-        <p class="muted-text">Coins auto-refresh every 2 seconds.</p>
+        <p class="score">Crystals: <span id="crystals">0</span></p>
+        <p class="muted-text">5% chance to get 1 crystal per click (saved in local storage).</p>
       </section>
 
       <section class="click-zone" id="click-zone">
@@ -30,8 +31,19 @@
       const coinsEl = document.getElementById('coins');
       const clickBtn = document.getElementById('click-btn');
       const clickZone = document.getElementById('click-zone');
+      const CRYSTAL_KEY = 'vixelCrystals';
+      const crystalsEl = document.getElementById('crystals');
 
       let currentUser;
+
+      function getCrystals() {
+        return Number(localStorage.getItem(CRYSTAL_KEY) || 0);
+      }
+
+      function setCrystals(value) {
+        localStorage.setItem(CRYSTAL_KEY, String(value));
+        crystalsEl.textContent = value;
+      }
 
       function moveButtonRandom() {
         const zoneWidth = clickZone.clientWidth;
@@ -65,6 +77,12 @@
         const nextCoins = roundCoins(currentCoins + reward);
         currentUser = await updateCoins(currentUser.id, nextCoins);
         renderUserInfo(currentUser, usernameEl, coinsEl);
+
+        if (Math.random() < 0.05) {
+          const nextCrystals = getCrystals() + 1;
+          setCrystals(nextCrystals);
+        }
+
         moveButtonRandom();
       });
 
@@ -81,6 +99,7 @@
       async function init() {
         currentUser = await ensureUser(true);
         renderUserInfo(currentUser, usernameEl, coinsEl);
+        crystalsEl.textContent = getCrystals();
 
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
