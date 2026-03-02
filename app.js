@@ -89,12 +89,11 @@ async function setUsername(username) {
     throw new Error('Username is required.');
   }
 
-  const existingUser = await findUserByUsername(clean);
-  if (existingUser) {
-    throw new Error('Username is already taken. Please choose another one.');
+  let user = await findUserByUsername(clean);
+  if (!user) {
+    user = await createUser(clean);
   }
 
-  const user = await createUser(clean);
   saveSession(user);
   return user;
 }
