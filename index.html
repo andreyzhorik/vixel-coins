@@ -32,6 +32,7 @@
         </div>
 
         <div class="button-group">
+          <button id="switch-user-btn" class="alt-button" type="button">Logout / Switch User</button>
           <a class="main-button" href="clicker.html">Pick Clicker</a>
           <a class="main-button" href="gamble.html">Gamble</a>
           <a class="main-button" href="shop.html">Shop</a>
@@ -61,6 +62,7 @@
       const usernameEl = document.getElementById('username');
       const coinsEl = document.getElementById('coins');
       const leaderboardList = document.getElementById('leaderboard-list');
+      const switchUserBtn = document.getElementById('switch-user-btn');
       const bonusBtn = document.getElementById('bonus-btn');
       const bonusTimerEl = document.getElementById('bonus-timer');
 
@@ -216,6 +218,15 @@
 
         const crystalText = wonCrystal ? '+1 crystal' : '+0 crystals';
         await showBonusPopup(`+${awardedCoins} coins • ${crystalText} • Rank: ${activeRank}`);
+      });
+
+
+      switchUserBtn.addEventListener('click', () => {
+        if (stopCoinSync) stopCoinSync();
+        clearInterval(leaderboardTimer);
+        clearInterval(bonusCountdownTimer);
+        currentUser = null;
+        switchUser();
       });
 
       async function init() {

@@ -138,8 +138,10 @@ async function fetchJson(url, options = {}) {
 }
 
 async function findUserByUsername(username) {
-  const users = await fetchJson(`${API_BASE}?username=${encodeURIComponent(username)}`);
-  return users[0] ?? null;
+  const clean = String(username || '').trim().toLowerCase();
+  if (!clean) return null;
+  const users = await fetchJson(API_BASE);
+  return users.find((user) => String(user.username || '').trim().toLowerCase() === clean) ?? null;
 }
 
 async function createUser(username) {
@@ -178,6 +180,7 @@ async function ensureUser(required = false) {
     try {
       return await getUserById(session.userId);
     } catch (_) {
+      clearSession();
       if (required) {
         window.location.href = 'index.html';
       }
@@ -193,11 +196,7 @@ async function ensureUser(required = false) {
 }
 
 async function setUsername(username) {
-  if (hasLockedUsername()) {
-    throw new Error('Username is already locked for this browser.');
-  }
-
-  const clean = username.trim();
+  const clean = String(username || '').trim();
   if (!clean) {
     throw new Error('Username is required.');
   }
@@ -209,6 +208,11 @@ async function setUsername(username) {
 
   saveSession(user);
   return user;
+}
+
+function switchUser() {
+  clearSession();
+  window.location.href = 'index.html';
 }
 
 function renderUserInfo(user, usernameEl, coinsEl) {

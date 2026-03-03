@@ -17,6 +17,7 @@
         <p class="score">Active Rank: <span id="active-rank">Vixel</span></p>
         <p id="bonus-note" class="muted-text">Bonus: None</p>
         <p id="shop-gamble-note" class="muted-text"></p>
+        <button id="switch-user-btn" class="alt-button" type="button">Logout / Switch User</button>
       </section>
 
       <section class="panel left-panel">
@@ -100,6 +101,7 @@
       const activeRankEl = document.getElementById('active-rank');
       const bonusNoteEl = document.getElementById('bonus-note');
       const shopGambleNoteEl = document.getElementById('shop-gamble-note');
+      const switchUserBtn = document.getElementById('switch-user-btn');
 
       let currentUser;
       let rollLocked = false;
@@ -208,6 +210,11 @@
         } finally {
           rollLocked = false;
         }
+      });
+
+
+      switchUserBtn.addEventListener('click', () => {
+        switchUser();
       });
 
       async function init() {
