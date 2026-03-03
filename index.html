@@ -24,6 +24,7 @@
       <section id="game-panel" class="panel hidden">
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
+        <p class="score">Crystals: <span id="crystals">0</span></p>
 
         <div class="panel left-panel">
           <h2>12-Hour Bonus</h2>
@@ -60,6 +61,7 @@
       const gateError = document.getElementById('gate-error');
       const usernameEl = document.getElementById('username');
       const coinsEl = document.getElementById('coins');
+      const crystalsEl = document.getElementById('crystals');
       const leaderboardList = document.getElementById('leaderboard-list');
       const bonusBtn = document.getElementById('bonus-btn');
       const bonusTimerEl = document.getElementById('bonus-timer');
@@ -136,13 +138,19 @@
         });
       }
 
+
+      function renderHomeUser(user) {
+        renderUserInfo(user, usernameEl, coinsEl);
+        crystalsEl.textContent = getUserCrystals(user);
+      }
+
       function startRefreshLoops() {
         if (!currentUser) return;
 
         if (stopCoinSync) stopCoinSync();
         stopCoinSync = startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
-          renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderHomeUser(currentUser);
         }, 2000);
 
         clearInterval(leaderboardTimer);
@@ -161,7 +169,7 @@
 
         try {
           currentUser = await setUsername(usernameInput.value);
-          renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderHomeUser(currentUser);
           showGate(false);
           await loadLeaderboard(leaderboardList, currentUser.username);
           startRefreshLoops();
@@ -199,7 +207,7 @@
         });
 
         setLastBonusClaimAt(Date.now());
-        renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderHomeUser(currentUser);
         updateBonusUi();
 
         const crystalText = wonCrystal ? '+1 crystal' : '+0 crystals';
@@ -210,7 +218,7 @@
         try {
           currentUser = await ensureUser(false);
           if (currentUser) {
-            renderUserInfo(currentUser, usernameEl, coinsEl);
+            renderHomeUser(currentUser);
             showGate(false);
             startRefreshLoops();
           } else {

@@ -269,7 +269,7 @@ async function loadLeaderboard(listEl, currentUsername = '') {
     const isCurrent = currentUsername && currentUsername.toLowerCase() === String(u.username).toLowerCase();
     const rank = normalizeRank(u.bestRank);
     const rankPill = `<span class="rank-pill" style="--rank-color:${getRankColor(rank)}">${rank}</span>`;
-    item.innerHTML = `#${index + 1} ${u.username} — ${Number(u.coins || 0)} coins ${rankPill}`;
+    item.innerHTML = `#${index + 1} ${u.username} — ${Number(u.coins || 0)} coins • ${Number(u.crystals || 0)} crystals ${rankPill}`;
     if (isCurrent) item.classList.add('current-user-row');
     listEl.appendChild(item);
   });

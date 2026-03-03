@@ -326,6 +326,7 @@
           coins: Number(currentUser.coins || 0) + wonCoins,
           bestRank: nextBestRank,
           activeRank,
+          crystals: getUserCrystals(currentUser),
         });
 
         renderUserInfo(currentUser, usernameEl, coinsEl);
@@ -455,6 +456,7 @@
           coins: Number(currentUser.coins || 0),
           bestRank: normalizeRank(currentUser.bestRank),
           activeRank: nextRank,
+          crystals: getUserCrystals(currentUser),
         });
         renderRankSelector(currentUser);
       });
