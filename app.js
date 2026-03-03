@@ -192,47 +192,41 @@ async function getUserById(id) {
 }
 
 async function updateUser(userId, updates = {}) {
-  try {
-    const current = await getUserById(userId);
-    const payload = {
-      username: current.username,
-      coins: Number(current.coins || 0),
-      crystals: Number(current.crystals || 0),
-      bestRank: normalizeRank(current.bestRank),
-      activeRank: normalizeRank(current.activeRank || current.bestRank),
-      ...updates,
-    };
-    const updated = await fetchJson(`${API_BASE}/${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return normalizeUserShape(updated);
-  } catch (error) {
-    console.warn('updateUser fallback due to API issue:', error.message || error);
-    return normalizeUserShape({ id: String(userId), ...updates });
-  }
+  const payload = {
+    username: String(updates.username || '').trim(),
+    coins: Number(updates.coins || 0),
+    crystals: Number(updates.crystals || 0),
+    bestRank: normalizeRank(updates.bestRank),
+    activeRank: normalizeRank(updates.activeRank || updates.bestRank),
+  };
+
+  const updated = await fetchJson(`${API_BASE}/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return normalizeUserShape(updated);
 }
 
-async function updateCoins(userId, coins) {
-  const user = await getUserById(userId);
+async function updateCoins(userId, coins, currentUser) {
+  const safe = normalizeUserShape(currentUser || {});
   return updateUser(userId, {
-    username: user.username,
+    username: safe.username,
     coins,
-    bestRank: normalizeRank(user.bestRank),
-    activeRank: getActiveRank(user),
-    crystals: getUserCrystals(user),
+    crystals: getUserCrystals(safe),
+    bestRank: safe.bestRank,
+    activeRank: safe.activeRank,
   });
 }
 
-async function updateCrystals(userId, crystals) {
-  const user = await getUserById(userId);
+async function updateCrystals(userId, crystals, currentUser) {
+  const safe = normalizeUserShape(currentUser || {});
   return updateUser(userId, {
-    username: user.username,
-    coins: Number(user.coins || 0),
-    bestRank: normalizeRank(user.bestRank),
-    activeRank: getActiveRank(user),
+    username: safe.username,
+    coins: Number(safe.coins || 0),
     crystals,
+    bestRank: safe.bestRank,
+    activeRank: safe.activeRank,
   });
 }
 
@@ -243,15 +237,11 @@ async function ensureUser(required = false) {
       const user = await getUserById(session.userId);
       return await syncUserDefaults(user);
     } catch (error) {
-      console.warn('ensureUser failed, using safe fallback user:', error.message || error);
-      return normalizeUserShape({
-        id: session.userId,
-        username: session.username,
-        coins: 0,
-        crystals: 0,
-        bestRank: 'Vixel',
-        activeRank: 'Vixel',
-      });
+      console.warn('ensureUser failed:', error.message || error);
+      if (required) {
+        window.location.href = 'index.html';
+      }
+      return null;
     }
   }
 

@@ -75,8 +75,6 @@
       const BONUS_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
       let currentUser = null;
-      let stopCoinSync = null;
-      let leaderboardTimer = null;
       let bonusCountdownTimer = null;
 
       function showGate(show) {
@@ -147,17 +145,6 @@
       function startRefreshLoops() {
         if (!currentUser) return;
 
-        if (stopCoinSync) stopCoinSync();
-        stopCoinSync = startUserCoinSync(currentUser.id, (latest) => {
-          currentUser = latest;
-          renderHomeUser(currentUser);
-        }, 2000);
-
-        clearInterval(leaderboardTimer);
-        leaderboardTimer = setInterval(() => {
-          loadLeaderboard(leaderboardList, currentUser.username).catch(() => {});
-        }, 4000);
-
         clearInterval(bonusCountdownTimer);
         bonusCountdownTimer = setInterval(updateBonusUi, 1000);
         updateBonusUi();
@@ -196,18 +183,14 @@
         const awardedCoins = Math.round(baseCoins * coinMultiplier);
         const wonCrystal = Math.random() < crystalChance;
 
-        const nextCoins = Number(currentUser.coins || 0) + awardedCoins;
-
-        currentUser = await updateUser(currentUser.id, {
-          username: currentUser.username,
-          coins: nextCoins,
-          bestRank: normalizeRank(currentUser.bestRank),
-          activeRank,
-          crystals: getUserCrystals(currentUser) + (wonCrystal ? 1 : 0),
-        });
+        currentUser.coins = Number(currentUser.coins || 0) + awardedCoins;
+        currentUser.bestRank = normalizeRank(currentUser.bestRank);
+        currentUser.activeRank = activeRank;
+        currentUser.crystals = getUserCrystals(currentUser) + (wonCrystal ? 1 : 0);
 
         setLastBonusClaimAt(Date.now());
         renderHomeUser(currentUser);
+        updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save bonus state:', error));
         updateBonusUi();
 
         const crystalText = wonCrystal ? '+1 crystal' : '+0 crystals';

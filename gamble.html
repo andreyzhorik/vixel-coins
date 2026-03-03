@@ -200,10 +200,11 @@
             message = `${tier.name}: You lost ${bet} coins.${hasShopBoost ? ' Mini-shop boost used.' : ''}`;
           }
 
-          currentUser = await updateCoins(currentUser.id, nextCoins);
+          currentUser.coins = nextCoins;
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderActiveRank(currentUser);
           renderShopGambleBoost();
+          updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save gamble state:', error));
           await showResultPopup({ won: didWin, message });
         } finally {
           rollLocked = false;
@@ -217,13 +218,6 @@
         renderUserInfo(currentUser, usernameEl, coinsEl);
         renderActiveRank(currentUser);
         renderShopGambleBoost();
-
-        startUserCoinSync(currentUser.id, (latest) => {
-          currentUser = latest;
-          renderUserInfo(currentUser, usernameEl, coinsEl);
-          renderActiveRank(currentUser);
-          renderShopGambleBoost();
-        }, 2000);
       }
 
       init();

@@ -90,16 +90,17 @@
         const rankMultiplier = rank === 'Wynix' ? 1.05 : 1;
         const reward = getClickReward(currentCoins) * rankMultiplier * getClickShopMultiplier();
         const nextCoins = roundCoins(currentCoins + reward);
-        currentUser = await updateCoins(currentUser.id, nextCoins);
+        currentUser.coins = nextCoins;
         renderUserInfo(currentUser, usernameEl, coinsEl);
         renderShopBoosts();
 
         const crystalChance = getActiveRank(currentUser) === 'Xivil' ? 0.10 : 0.05;
         if (Math.random() < crystalChance) {
-          const nextCrystals = getUserCrystals(currentUser) + 1;
-          currentUser = await updateCrystals(currentUser.id, nextCrystals);
+          currentUser.crystals = getUserCrystals(currentUser) + 1;
           renderCrystals(currentUser);
         }
+
+        updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save clicker state:', error));
 
         moveButtonRandom();
       });
@@ -123,15 +124,6 @@
         renderShopBoosts();
         renderCrystals(currentUser);
         applyClickerSkin(clickBtn);
-
-        startUserCoinSync(currentUser.id, (latest) => {
-          currentUser = latest;
-          renderUserInfo(currentUser, usernameEl, coinsEl);
-          renderActiveRank(currentUser);
-          renderShopBoosts();
-          renderCrystals(currentUser);
-          applyClickerSkin(clickBtn);
-        }, 2000);
 
         moveButtonRandom();
       }

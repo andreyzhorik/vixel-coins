@@ -321,18 +321,16 @@
         const rankName = rollRank(crate.rankChances);
         const nextBestRank = getBestRank(currentUser.bestRank, rankName);
 
-        currentUser = await updateUser(currentUser.id, {
-          username: currentUser.username,
-          coins: Number(currentUser.coins || 0) + wonCoins,
-          bestRank: nextBestRank,
-          activeRank,
-          crystals: getUserCrystals(currentUser),
-        });
+        currentUser.coins = Number(currentUser.coins || 0) + wonCoins;
+        currentUser.bestRank = nextBestRank;
+        currentUser.activeRank = activeRank;
 
         renderUserInfo(currentUser, usernameEl, coinsEl);
         renderCrystals(currentUser);
         renderCurrentRank(currentUser.bestRank);
         renderRankSelector(currentUser);
+
+        updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save crate state:', error));
 
         await showCratePopup({
           wonCoins,
@@ -371,16 +369,16 @@
           const nextBestRank = getBestRank(currentUser.bestRank, rankName);
           const nextCoins = Number(currentUser.coins || 0) + wonCoins;
 
-          currentUser = await updateUser(currentUser.id, {
-            username: currentUser.username,
-            coins: nextCoins,
-            bestRank: nextBestRank,
-            activeRank,
-            crystals: nextCrystals,
-          });
+          currentUser.coins = nextCoins;
+          currentUser.bestRank = nextBestRank;
+          currentUser.activeRank = activeRank;
+          currentUser.crystals = nextCrystals;
+
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderCrystals(currentUser);
           renderCurrentRank(currentUser.bestRank);
+
+          updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save crate open:', error));
 
           await showCratePopup({
             wonCoins,
@@ -408,14 +406,12 @@
 
         isOpening = true;
         try {
-          currentUser = await updateUser(currentUser.id, {
-            username: currentUser.username,
-            coins: availableCoins - item.cost,
-            bestRank: normalizeRank(currentUser.bestRank),
-            activeRank: getActiveRank(currentUser),
-            crystals: getUserCrystals(currentUser),
-          });
+          currentUser.coins = availableCoins - item.cost;
+          currentUser.bestRank = normalizeRank(currentUser.bestRank);
+          currentUser.activeRank = getActiveRank(currentUser);
+          currentUser.crystals = getUserCrystals(currentUser);
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save purchase:', error));
 
           switch (item.id) {
             case 'click-bonus-1m':
@@ -451,14 +447,11 @@
           return;
         }
 
-        currentUser = await updateUser(currentUser.id, {
-          username: currentUser.username,
-          coins: Number(currentUser.coins || 0),
-          bestRank: normalizeRank(currentUser.bestRank),
-          activeRank: nextRank,
-          crystals: getUserCrystals(currentUser),
-        });
+        currentUser.bestRank = normalizeRank(currentUser.bestRank);
+        currentUser.activeRank = nextRank;
+        currentUser.crystals = getUserCrystals(currentUser);
         renderRankSelector(currentUser);
+        updateUser(currentUser.id, currentUser).catch((error) => console.error('Failed to save active rank:', error));
       });
 
       async function init() {
@@ -483,14 +476,6 @@
         renderRankBonusInfo();
         renderCrates();
         renderMiniCoinShop();
-
-        startUserCoinSync(currentUser.id, (latest) => {
-          currentUser = latest;
-          renderUserInfo(currentUser, usernameEl, coinsEl);
-          renderCrystals(currentUser);
-          renderCurrentRank(currentUser.bestRank);
-          renderRankSelector(currentUser);
-        }, 2000);
       }
 
       init();
