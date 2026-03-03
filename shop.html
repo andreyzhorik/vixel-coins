@@ -60,8 +60,6 @@
 
     <script src="app.js"></script>
     <script>
-      const CRYSTAL_KEY = 'vixelCrystals';
-
       const CRATE_CONFIG = {
         basic: {
           label: 'Basic Crate',
@@ -153,13 +151,8 @@
       let currentUser;
       let isOpening = false;
 
-      function getCrystals() {
-        return Number(localStorage.getItem(CRYSTAL_KEY) || 0);
-      }
-
-      function setCrystals(value) {
-        localStorage.setItem(CRYSTAL_KEY, String(value));
-        crystalsEl.textContent = value;
+      function renderCrystals(user) {
+        crystalsEl.textContent = getUserCrystals(user);
       }
 
       function randomInRange(min, max) {
@@ -336,6 +329,7 @@
         });
 
         renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderCrystals(currentUser);
         renderCurrentRank(currentUser.bestRank);
         renderRankSelector(currentUser);
 
@@ -352,7 +346,7 @@
         if (!button || !currentUser || isOpening) return;
 
         const crate = CRATE_CONFIG[button.dataset.crate];
-        const currentCrystals = getCrystals();
+        const currentCrystals = getUserCrystals(currentUser);
 
         if (currentCrystals < crate.cost) {
           await showCratePopup({
@@ -372,7 +366,7 @@
           const crateMultiplier = activeRank === 'Yarel' ? 1.10 : 1;
           const wonCoins = Math.round(baseCoins * crateMultiplier);
 
-          setCrystals(currentCrystals - crate.cost);
+          const nextCrystals = currentCrystals - crate.cost;
           const nextBestRank = getBestRank(currentUser.bestRank, rankName);
           const nextCoins = Number(currentUser.coins || 0) + wonCoins;
 
@@ -381,8 +375,10 @@
             coins: nextCoins,
             bestRank: nextBestRank,
             activeRank,
+            crystals: nextCrystals,
           });
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderCrystals(currentUser);
           renderCurrentRank(currentUser.bestRank);
 
           await showCratePopup({
@@ -416,6 +412,7 @@
             coins: availableCoins - item.cost,
             bestRank: normalizeRank(currentUser.bestRank),
             activeRank: getActiveRank(currentUser),
+            crystals: getUserCrystals(currentUser),
           });
           renderUserInfo(currentUser, usernameEl, coinsEl);
 
@@ -466,17 +463,18 @@
         currentUser = await ensureUser(true);
         if (!currentUser) return;
         renderUserInfo(currentUser, usernameEl, coinsEl);
-        crystalsEl.textContent = getCrystals();
 
-        if (!currentUser.bestRank || !currentUser.activeRank) {
+        if (!currentUser.bestRank || !currentUser.activeRank || currentUser.crystals == null) {
           currentUser = await updateUser(currentUser.id, {
             username: currentUser.username,
             coins: Number(currentUser.coins || 0),
             bestRank: normalizeRank(currentUser.bestRank),
             activeRank: getActiveRank(currentUser),
+            crystals: getUserCrystals(currentUser),
           });
         }
 
+        renderCrystals(currentUser);
         renderCurrentRank(currentUser.bestRank);
         renderRankSelector(currentUser);
         renderRankChances();
@@ -487,6 +485,7 @@
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderCrystals(currentUser);
           renderCurrentRank(currentUser.bestRank);
           renderRankSelector(currentUser);
         }, 2000);

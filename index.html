@@ -70,7 +70,6 @@
       const bonusOverlaySubtext = document.getElementById('bonus-overlay-subtext');
 
       const BONUS_KEY = 'vixelDailyBonus';
-      const CRYSTAL_KEY = 'vixelCrystals';
       const BONUS_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
       let currentUser = null;
@@ -83,14 +82,6 @@
         gamePanel.classList.toggle('hidden', show);
       }
 
-
-      function getCrystals() {
-        return Number(localStorage.getItem(CRYSTAL_KEY) || 0);
-      }
-
-      function setCrystals(value) {
-        localStorage.setItem(CRYSTAL_KEY, String(value));
-      }
 
       function getLastBonusClaimAt() {
         return Number(localStorage.getItem(BONUS_KEY) || 0);
@@ -204,11 +195,8 @@
           coins: nextCoins,
           bestRank: normalizeRank(currentUser.bestRank),
           activeRank,
+          crystals: getUserCrystals(currentUser) + (wonCrystal ? 1 : 0),
         });
-
-        if (wonCrystal) {
-          setCrystals(getCrystals() + 1);
-        }
 
         setLastBonusClaimAt(Date.now());
         renderUserInfo(currentUser, usernameEl, coinsEl);

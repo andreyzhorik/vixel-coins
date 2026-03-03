@@ -148,8 +148,24 @@ async function createUser(username) {
   return fetchJson(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, coins: 0, bestRank: 'Vixel', activeRank: 'Vixel' }),
+    body: JSON.stringify({ username, coins: 0, crystals: 0, bestRank: 'Vixel', activeRank: 'Vixel' }),
   });
+}
+
+
+function getUserCrystals(user) {
+  return Number(user?.crystals || 0);
+}
+
+async function syncUserDefaults(user) {
+  const updates = {};
+  if (user.bestRank == null) updates.bestRank = 'Vixel';
+  if (user.activeRank == null) updates.activeRank = normalizeRank(user.bestRank);
+  if (user.crystals == null) updates.crystals = 0;
+  if (Object.keys(updates).length === 0) return user;
+  updates.username = user.username;
+  updates.coins = Number(user.coins || 0);
+  return updateUser(user.id, updates);
 }
 
 async function getUserById(id) {
@@ -158,7 +174,7 @@ async function getUserById(id) {
 
 async function updateUser(userId, updates) {
   return fetchJson(`${API_BASE}/${userId}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
@@ -171,6 +187,18 @@ async function updateCoins(userId, coins) {
     coins,
     bestRank: normalizeRank(user.bestRank),
     activeRank: getActiveRank(user),
+    crystals: getUserCrystals(user),
+  });
+}
+
+async function updateCrystals(userId, crystals) {
+  const user = await getUserById(userId);
+  return updateUser(userId, {
+    username: user.username,
+    coins: Number(user.coins || 0),
+    bestRank: normalizeRank(user.bestRank),
+    activeRank: getActiveRank(user),
+    crystals,
   });
 }
 
@@ -178,7 +206,8 @@ async function ensureUser(required = false) {
   const session = getSession();
   if (session.userId && session.username) {
     try {
-      return await getUserById(session.userId);
+      const user = await getUserById(session.userId);
+      return await syncUserDefaults(user);
     } catch (_) {
       clearSession();
       if (required) {
@@ -211,8 +240,9 @@ async function setUsername(username) {
   }
 
   const user = await createUser(clean);
-  saveSession(user);
-  return user;
+  const syncedUser = await syncUserDefaults(user);
+  saveSession(syncedUser);
+  return syncedUser;
 }
 
 function renderUserInfo(user, usernameEl, coinsEl) {

@@ -33,7 +33,6 @@
       const coinsEl = document.getElementById('coins');
       const clickBtn = document.getElementById('click-btn');
       const clickZone = document.getElementById('click-zone');
-      const CRYSTAL_KEY = 'vixelCrystals';
       const crystalsEl = document.getElementById('crystals');
       const activeRankEl = document.getElementById('active-rank');
       const bonusNoteEl = document.getElementById('bonus-note');
@@ -41,13 +40,8 @@
 
       let currentUser;
 
-      function getCrystals() {
-        return Number(localStorage.getItem(CRYSTAL_KEY) || 0);
-      }
-
-      function setCrystals(value) {
-        localStorage.setItem(CRYSTAL_KEY, String(value));
-        crystalsEl.textContent = value;
+      function renderCrystals(user) {
+        crystalsEl.textContent = getUserCrystals(user);
       }
 
       function moveButtonRandom() {
@@ -102,8 +96,9 @@
 
         const crystalChance = getActiveRank(currentUser) === 'Xivil' ? 0.10 : 0.05;
         if (Math.random() < crystalChance) {
-          const nextCrystals = getCrystals() + 1;
-          setCrystals(nextCrystals);
+          const nextCrystals = getUserCrystals(currentUser) + 1;
+          currentUser = await updateCrystals(currentUser.id, nextCrystals);
+          renderCrystals(currentUser);
         }
 
         moveButtonRandom();
@@ -126,7 +121,7 @@
         renderUserInfo(currentUser, usernameEl, coinsEl);
         renderActiveRank(currentUser);
         renderShopBoosts();
-        crystalsEl.textContent = getCrystals();
+        renderCrystals(currentUser);
         applyClickerSkin(clickBtn);
 
         startUserCoinSync(currentUser.id, (latest) => {
@@ -134,6 +129,7 @@
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderActiveRank(currentUser);
           renderShopBoosts();
+          renderCrystals(currentUser);
           applyClickerSkin(clickBtn);
         }, 2000);
 
