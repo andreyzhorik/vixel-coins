@@ -1,6 +1,17 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='256' height='200' viewBox='0 0 256 200'>
-  <rect x='20' y='42' width='216' height='128' rx='18' fill='#d49400' stroke='#8a5600' stroke-width='8'/>
-  <rect x='36' y='56' width='184' height='48' rx='10' fill='#c3394b'/>
-  <rect x='40' y='106' width='176' height='20' fill='#f0cc4d'/>
-  <rect x='116' y='94' width='24' height='60' rx='8' fill='#c68800'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='512' height='400' viewBox='0 0 512 400'>
+  <defs>
+    <linearGradient id='gold' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0' stop-color='#f5d95f'/><stop offset='1' stop-color='#d08e00'/>
+    </linearGradient>
+    <linearGradient id='band' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0' stop-color='#8e5d47'/><stop offset='1' stop-color='#6c4333'/>
+    </linearGradient>
+  </defs>
+  <rect x='74' y='72' width='364' height='240' rx='36' fill='url(#gold)' stroke='#7a4a00' stroke-width='12'/>
+  <rect x='95' y='92' width='322' height='88' rx='18' fill='url(#band)' opacity='0.95'/>
+  <rect x='88' y='183' width='336' height='28' rx='10' fill='#f0dc7f'/>
+  <rect x='228' y='88' width='56' height='210' rx='14' fill='url(#gold)'/>
+  <rect x='238' y='186' width='36' height='62' rx='12' fill='#cc8a00'/>
+  <rect x='130' y='90' width='42' height='210' rx='10' fill='url(#gold)'/>
+  <rect x='340' y='90' width='42' height='210' rx='10' fill='url(#gold)'/>
 </svg>
