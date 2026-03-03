@@ -321,3 +321,32 @@ label {
   display: none;
 }
 
+
+.crate-table-wrap {
+  margin-top: 0.8rem;
+  overflow-x: auto;
+}
+
+.crate-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+
+.crate-table th,
+.crate-table td {
+  border: 1px solid #b51f44;
+  padding: 0.6rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+.crate-table th {
+  color: #ffd4dd;
+  background: #5a0d1f;
+}
+
+.crate-table td {
+  color: #ffeaf0;
+  background: #3a0915;
+}
