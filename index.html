@@ -25,6 +25,12 @@
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
 
+        <div class="panel left-panel">
+          <h2>12-Hour Bonus</h2>
+          <button id="bonus-btn" class="main-button" type="button">Claim Bonus</button>
+          <p id="bonus-timer" class="muted-text">Bonus ready now.</p>
+        </div>
+
         <div class="button-group">
           <a class="main-button" href="clicker.html">Pick Clicker</a>
           <a class="main-button" href="gamble.html">Gamble</a>
@@ -38,6 +44,13 @@
       </section>
     </main>
 
+    <div id="bonus-overlay" class="result-overlay hidden" aria-hidden="true">
+      <div id="bonus-overlay-card" class="overlay-card">
+        <div id="bonus-overlay-title" class="overlay-text">BONUS CLAIMED</div>
+        <p id="bonus-overlay-subtext" class="overlay-subtext"></p>
+      </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
       const usernameGate = document.getElementById('username-gate');
@@ -48,14 +61,88 @@
       const usernameEl = document.getElementById('username');
       const coinsEl = document.getElementById('coins');
       const leaderboardList = document.getElementById('leaderboard-list');
+      const bonusBtn = document.getElementById('bonus-btn');
+      const bonusTimerEl = document.getElementById('bonus-timer');
+
+      const bonusOverlay = document.getElementById('bonus-overlay');
+      const bonusOverlayCard = document.getElementById('bonus-overlay-card');
+      const bonusOverlayTitle = document.getElementById('bonus-overlay-title');
+      const bonusOverlaySubtext = document.getElementById('bonus-overlay-subtext');
+
+      const BONUS_KEY = 'vixelDailyBonus';
+      const CRYSTAL_KEY = 'vixelCrystals';
+      const BONUS_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
       let currentUser = null;
       let stopCoinSync = null;
       let leaderboardTimer = null;
+      let bonusCountdownTimer = null;
 
       function showGate(show) {
         usernameGate.classList.toggle('hidden', !show);
         gamePanel.classList.toggle('hidden', show);
+      }
+
+
+      function getCrystals() {
+        return Number(localStorage.getItem(CRYSTAL_KEY) || 0);
+      }
+
+      function setCrystals(value) {
+        localStorage.setItem(CRYSTAL_KEY, String(value));
+      }
+
+      function getLastBonusClaimAt() {
+        return Number(localStorage.getItem(BONUS_KEY) || 0);
+      }
+
+      function setLastBonusClaimAt(timestamp) {
+        localStorage.setItem(BONUS_KEY, String(timestamp));
+      }
+
+      function getBonusRemainingMs(now = Date.now()) {
+        const elapsed = now - getLastBonusClaimAt();
+        return Math.max(BONUS_COOLDOWN_MS - elapsed, 0);
+      }
+
+      function formatRemaining(ms) {
+        const totalSeconds = Math.ceil(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }
+
+      function updateBonusUi() {
+        const remaining = getBonusRemainingMs();
+        const isReady = remaining === 0;
+        bonusBtn.disabled = !isReady;
+        bonusBtn.textContent = isReady ? 'Claim Bonus' : 'Bonus Cooldown';
+        bonusTimerEl.textContent = isReady ? 'Bonus ready now.' : `Next bonus in ${formatRemaining(remaining)}.`;
+      }
+
+      function showBonusPopup(message) {
+        return new Promise((resolve) => {
+          const close = () => {
+            bonusOverlay.classList.add('hidden');
+            bonusOverlay.classList.remove('overlay-win', 'overlay-loss');
+            bonusOverlay.setAttribute('aria-hidden', 'true');
+            bonusOverlay.removeEventListener('pointerdown', close);
+            resolve();
+          };
+
+          bonusOverlayTitle.textContent = 'BONUS CLAIMED';
+          bonusOverlaySubtext.textContent = message;
+
+          bonusOverlay.classList.remove('hidden');
+          bonusOverlay.classList.add('overlay-win');
+          bonusOverlay.setAttribute('aria-hidden', 'false');
+
+          bonusOverlayCard.classList.remove('overlay-pop');
+          requestAnimationFrame(() => bonusOverlayCard.classList.add('overlay-pop'));
+
+          bonusOverlay.addEventListener('pointerdown', close, { once: true });
+        });
       }
 
       function startRefreshLoops() {
@@ -71,6 +158,10 @@
         leaderboardTimer = setInterval(() => {
           loadLeaderboard(leaderboardList, currentUser.username).catch(() => {});
         }, 4000);
+
+        clearInterval(bonusCountdownTimer);
+        bonusCountdownTimer = setInterval(updateBonusUi, 1000);
+        updateBonusUi();
       }
 
       usernameForm.addEventListener('submit', async (event) => {
@@ -88,6 +179,45 @@
         }
       });
 
+
+      bonusBtn.addEventListener('click', async () => {
+        if (!currentUser) return;
+
+        const remaining = getBonusRemainingMs();
+        if (remaining > 0) {
+          updateBonusUi();
+          return;
+        }
+
+        const activeRank = getActiveRank(currentUser);
+        const coinMultiplier = activeRank === 'Wynix' ? 1.05 : 1;
+        const crystalChance = activeRank === 'Xivil' ? 0.25 : 0.2;
+
+        const baseCoins = Math.floor(Math.random() * 31) + 20;
+        const awardedCoins = Math.round(baseCoins * coinMultiplier);
+        const wonCrystal = Math.random() < crystalChance;
+
+        const nextCoins = Number(currentUser.coins || 0) + awardedCoins;
+
+        currentUser = await updateUser(currentUser.id, {
+          username: currentUser.username,
+          coins: nextCoins,
+          bestRank: normalizeRank(currentUser.bestRank),
+          activeRank,
+        });
+
+        if (wonCrystal) {
+          setCrystals(getCrystals() + 1);
+        }
+
+        setLastBonusClaimAt(Date.now());
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+        updateBonusUi();
+
+        const crystalText = wonCrystal ? '+1 crystal' : '+0 crystals';
+        await showBonusPopup(`+${awardedCoins} coins • ${crystalText} • Rank: ${activeRank}`);
+      });
+
       async function init() {
         try {
           currentUser = await ensureUser(false);
@@ -96,6 +226,7 @@
             showGate(false);
             startRefreshLoops();
           } else {
+            clearInterval(bonusCountdownTimer);
             showGate(true);
             usernameInput.value = '';
           }

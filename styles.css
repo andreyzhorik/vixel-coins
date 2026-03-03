@@ -101,6 +101,14 @@ input {
   filter: brightness(1.05);
 }
 
+.main-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  filter: grayscale(0.2);
+  box-shadow: none;
+  transform: none;
+}
+
 .score {
   margin: 0.25rem 0;
   font-weight: 700;
