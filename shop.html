@@ -15,7 +15,7 @@
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
         <p class="score">Crystals: <span id="crystals">0</span></p>
-        <p class="score">Current Rank: <span id="current-rank">None</span></p>
+        <p class="score">Best Rank: <span id="current-rank">Vixel</span></p>
       </section>
 
       <section class="panel left-panel">
@@ -37,7 +37,6 @@
     <script src="app.js"></script>
     <script>
       const CRYSTAL_KEY = 'vixelCrystals';
-      const RANK_KEY = 'vixelCurrentRank';
 
       const CRATE_CONFIG = {
         basic: {
@@ -122,13 +121,10 @@
         crystalsEl.textContent = value;
       }
 
-      function getCurrentRank() {
-        return localStorage.getItem(RANK_KEY) || 'None';
-      }
-
-      function setCurrentRank(rank) {
-        localStorage.setItem(RANK_KEY, rank);
-        rankEl.textContent = rank;
+      function renderCurrentRank(rank) {
+        const normalized = normalizeRank(rank);
+        rankEl.textContent = normalized;
+        rankEl.style.color = getRankColor(normalized);
       }
 
       function randomInRange(min, max) {
@@ -212,11 +208,16 @@
           const rankName = rollRank(crate.rankChances);
 
           setCrystals(currentCrystals - crate.cost);
-          setCurrentRank(rankName);
-
+          const nextBestRank = getBestRank(currentUser.bestRank, rankName);
           const nextCoins = Number(currentUser.coins || 0) + wonCoins;
-          currentUser = await updateCoins(currentUser.id, nextCoins);
+
+          currentUser = await updateUser(currentUser.id, {
+            username: currentUser.username,
+            coins: nextCoins,
+            bestRank: nextBestRank,
+          });
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderCurrentRank(currentUser.bestRank);
 
           await showCratePopup({
             wonCoins,
@@ -231,14 +232,23 @@
 
       async function init() {
         currentUser = await ensureUser(true);
+        if (!currentUser) return;
         renderUserInfo(currentUser, usernameEl, coinsEl);
         crystalsEl.textContent = getCrystals();
-        rankEl.textContent = getCurrentRank();
+        if (!currentUser.bestRank) {
+          currentUser = await updateUser(currentUser.id, {
+            username: currentUser.username,
+            coins: Number(currentUser.coins || 0),
+            bestRank: 'Vixel',
+          });
+        }
+        renderCurrentRank(currentUser.bestRank);
         renderCrates();
 
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderCurrentRank(currentUser.bestRank);
         }, 2000);
       }
 

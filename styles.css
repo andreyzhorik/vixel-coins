@@ -384,3 +384,20 @@ label {
 .crate-overlay-card {
   max-width: 430px;
 }
+
+.rank-pill {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--rank-color);
+  border: 1px solid var(--rank-color);
+  background: color-mix(in oklab, var(--rank-color) 18%, black);
+}
+
+#current-rank {
+  font-weight: 800;
+}
