@@ -409,3 +409,47 @@ label {
 #current-rank {
   font-weight: 800;
 }
+
+.theme-arcade {
+  background: radial-gradient(circle at 20% 20%, #1e3a8a, #4c1d95 45%, #190b2b 100%);
+}
+
+.target-button.skin-neon {
+  border-color: #d3fbff;
+  background: radial-gradient(circle at 30% 30%, #7bf5ff, #2d9cff 55%, #3347f2);
+  box-shadow: 0 0 0 2px rgba(123, 245, 255, 0.2), 0 8px 18px rgba(45, 156, 255, 0.45);
+}
+
+.quick-grid,
+.coin-shop-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rank-chance-card,
+.coin-item-card {
+  border: 1px solid #b51f44;
+  border-radius: 10px;
+  background: #3a0915;
+  padding: 0.75rem;
+}
+
+.rank-chance-card ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+}
+
+.rank-chance-card li {
+  margin: 0.25rem 0;
+}
+
+.coin-item-card h4,
+.rank-chance-card h4 {
+  margin: 0 0 0.35rem;
+  color: #ffadc0;
+}
+
+.coin-item-card p {
+  margin: 0.25rem 0;
+}

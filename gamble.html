@@ -16,6 +16,7 @@
         <p class="score">Coins: <span id="coins">0</span></p>
         <p class="score">Active Rank: <span id="active-rank">Vixel</span></p>
         <p id="bonus-note" class="muted-text">Bonus: None</p>
+        <p id="shop-gamble-note" class="muted-text"></p>
       </section>
 
       <section class="panel left-panel">
@@ -98,6 +99,7 @@
       const overlayCard = document.getElementById('overlay-card');
       const activeRankEl = document.getElementById('active-rank');
       const bonusNoteEl = document.getElementById('bonus-note');
+      const shopGambleNoteEl = document.getElementById('shop-gamble-note');
 
       let currentUser;
       let rollLocked = false;
@@ -143,6 +145,11 @@
         bonusNoteEl.textContent = `Bonus: ${RANK_BONUSES[rank]}`;
       }
 
+      function renderShopGambleBoost() {
+        const charges = getShopEffect(SHOP_EFFECT_KEYS.gambleBoostCharges, 0);
+        shopGambleNoteEl.textContent = `Mini-shop gamble boosts: ${charges}`;
+      }
+
       function parseValidBet(value, availableCoins) {
         const bet = Number(value);
 
@@ -179,20 +186,24 @@
           let nextCoins = availableCoins - bet;
           let message;
 
+          const hasShopBoost = consumeGambleBoostCharge();
+
           if (didWin) {
             const rank = getActiveRank(currentUser);
-            const payoutMultiplier = rank === 'Zyxel' ? 1.10 : 1;
-            const payoutTotal = Math.max(bet, Math.round(bet * tier.payout * payoutMultiplier));
+            const rankMultiplier = rank === 'Zyxel' ? 1.10 : 1;
+            const shopMultiplier = hasShopBoost ? 1.10 : 1;
+            const payoutTotal = Math.max(bet, Math.round(bet * tier.payout * rankMultiplier * shopMultiplier));
             nextCoins += payoutTotal;
             const profit = payoutTotal - bet;
-            message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
+            message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).${hasShopBoost ? ' Mini-shop boost used.' : ''}`;
           } else {
-            message = `${tier.name}: You lost ${bet} coins.`;
+            message = `${tier.name}: You lost ${bet} coins.${hasShopBoost ? ' Mini-shop boost used.' : ''}`;
           }
 
           currentUser = await updateCoins(currentUser.id, nextCoins);
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderActiveRank(currentUser);
+          renderShopGambleBoost();
           await showResultPopup({ won: didWin, message });
         } finally {
           rollLocked = false;
@@ -204,11 +215,13 @@
         if (!currentUser) return;
         renderUserInfo(currentUser, usernameEl, coinsEl);
         renderActiveRank(currentUser);
+        renderShopGambleBoost();
 
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderActiveRank(currentUser);
+          renderShopGambleBoost();
         }, 2000);
       }
 

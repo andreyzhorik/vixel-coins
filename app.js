@@ -21,6 +21,14 @@ const RANK_BONUSES = {
   Zyxel: 'Gambling Payout +10%',
 };
 
+const SHOP_EFFECT_KEYS = {
+  clickerSkin: 'vixelClickerSkin',
+  clickBonusUntil: 'vixelClickBonusUntil',
+  coinMultiplierUntil: 'vixelCoinMultiplierUntil',
+  gambleBoostCharges: 'vixelGambleBoostCharges',
+  theme: 'vixelTheme',
+};
+
 function getSession() {
   return {
     userId: localStorage.getItem(STORAGE_KEYS.userId),
@@ -67,6 +75,58 @@ function getActiveRank(user) {
 function getUnlockedRanks(bestRank) {
   const bestTier = getRankTier(bestRank);
   return RANK_ORDER.filter((_, index) => index <= bestTier);
+}
+
+function getShopEffect(key, fallback = 0) {
+  const value = localStorage.getItem(key);
+  return value == null ? fallback : Number(value) || fallback;
+}
+
+function setShopEffect(key, value) {
+  localStorage.setItem(key, String(value));
+}
+
+function isTimedEffectActive(key, now = Date.now()) {
+  return getShopEffect(key, 0) > now;
+}
+
+function activateTimedEffect(key, durationMs) {
+  const now = Date.now();
+  const currentEnd = getShopEffect(key, 0);
+  const nextEnd = Math.max(currentEnd, now) + durationMs;
+  setShopEffect(key, nextEnd);
+  return nextEnd;
+}
+
+function getClickShopMultiplier(now = Date.now()) {
+  let multiplier = 1;
+  if (isTimedEffectActive(SHOP_EFFECT_KEYS.clickBonusUntil, now)) multiplier *= 1.5;
+  if (isTimedEffectActive(SHOP_EFFECT_KEYS.coinMultiplierUntil, now)) multiplier *= 1.25;
+  return multiplier;
+}
+
+function addGambleBoostCharge(amount = 1) {
+  const next = getShopEffect(SHOP_EFFECT_KEYS.gambleBoostCharges, 0) + amount;
+  setShopEffect(SHOP_EFFECT_KEYS.gambleBoostCharges, next);
+  return next;
+}
+
+function consumeGambleBoostCharge() {
+  const current = getShopEffect(SHOP_EFFECT_KEYS.gambleBoostCharges, 0);
+  if (current <= 0) return false;
+  setShopEffect(SHOP_EFFECT_KEYS.gambleBoostCharges, current - 1);
+  return true;
+}
+
+function applySavedTheme() {
+  const theme = localStorage.getItem(SHOP_EFFECT_KEYS.theme) || 'default';
+  document.body.classList.toggle('theme-arcade', theme === 'arcade');
+}
+
+function applyClickerSkin(buttonEl) {
+  if (!buttonEl) return;
+  const skin = localStorage.getItem(SHOP_EFFECT_KEYS.clickerSkin) || 'default';
+  buttonEl.classList.toggle('skin-neon', skin === 'neon');
 }
 
 async function fetchJson(url, options = {}) {
@@ -201,4 +261,10 @@ function startUserCoinSync(userId, onUpdate, intervalMs = 2000) {
     active = false;
     clearInterval(timer);
   };
+}
+
+if (document.body) {
+  applySavedTheme();
+} else {
+  window.addEventListener('DOMContentLoaded', applySavedTheme, { once: true });
 }
