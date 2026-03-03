@@ -129,12 +129,28 @@ function applyClickerSkin(buttonEl) {
   buttonEl.classList.toggle('skin-neon', skin === 'neon');
 }
 
+function normalizeUserShape(user) {
+  if (!user) return null;
+  return {
+    ...user,
+    coins: Number(user.coins || 0),
+    crystals: Number(user.crystals || 0),
+    bestRank: normalizeRank(user.bestRank),
+    activeRank: normalizeRank(user.activeRank || user.bestRank),
+  };
+}
+
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new Error(`API request failed: ${response.status}${body ? ` - ${body.slice(0, 120)}` : ''}`);
+    }
+    return await response.json();
+  } catch (error) {
+    throw new Error(`Network/API error for ${url}: ${error.message || String(error)}`);
   }
-  return response.json();
 }
 
 async function findUserByUsername(username) {
@@ -145,11 +161,12 @@ async function findUserByUsername(username) {
 }
 
 async function createUser(username) {
-  return fetchJson(API_BASE, {
+  const created = await fetchJson(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, coins: 0, crystals: 0, bestRank: 'Vixel', activeRank: 'Vixel' }),
   });
+  return normalizeUserShape(created);
 }
 
 
@@ -158,26 +175,43 @@ function getUserCrystals(user) {
 }
 
 async function syncUserDefaults(user) {
+  const safe = normalizeUserShape(user);
   const updates = {};
-  if (user.bestRank == null) updates.bestRank = 'Vixel';
-  if (user.activeRank == null) updates.activeRank = normalizeRank(user.bestRank);
-  if (user.crystals == null) updates.crystals = 0;
-  if (Object.keys(updates).length === 0) return user;
-  updates.username = user.username;
-  updates.coins = Number(user.coins || 0);
-  return updateUser(user.id, updates);
+  if (user.bestRank == null) updates.bestRank = safe.bestRank;
+  if (user.activeRank == null) updates.activeRank = safe.activeRank;
+  if (user.crystals == null) updates.crystals = safe.crystals;
+  if (Object.keys(updates).length === 0) return safe;
+  updates.username = safe.username;
+  updates.coins = safe.coins;
+  return updateUser(safe.id, updates);
 }
 
 async function getUserById(id) {
-  return fetchJson(`${API_BASE}/${id}`);
+  const user = await fetchJson(`${API_BASE}/${id}`);
+  return normalizeUserShape(user);
 }
 
-async function updateUser(userId, updates) {
-  return fetchJson(`${API_BASE}/${userId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  });
+async function updateUser(userId, updates = {}) {
+  try {
+    const current = await getUserById(userId);
+    const payload = {
+      username: current.username,
+      coins: Number(current.coins || 0),
+      crystals: Number(current.crystals || 0),
+      bestRank: normalizeRank(current.bestRank),
+      activeRank: normalizeRank(current.activeRank || current.bestRank),
+      ...updates,
+    };
+    const updated = await fetchJson(`${API_BASE}/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return normalizeUserShape(updated);
+  } catch (error) {
+    console.warn('updateUser fallback due to API issue:', error.message || error);
+    return normalizeUserShape({ id: String(userId), ...updates });
+  }
 }
 
 async function updateCoins(userId, coins) {
@@ -208,12 +242,16 @@ async function ensureUser(required = false) {
     try {
       const user = await getUserById(session.userId);
       return await syncUserDefaults(user);
-    } catch (_) {
-      clearSession();
-      if (required) {
-        window.location.href = 'index.html';
-      }
-      return null;
+    } catch (error) {
+      console.warn('ensureUser failed, using safe fallback user:', error.message || error);
+      return normalizeUserShape({
+        id: session.userId,
+        username: session.username,
+        coins: 0,
+        crystals: 0,
+        bestRank: 'Vixel',
+        activeRank: 'Vixel',
+      });
     }
   }
 
