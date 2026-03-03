@@ -18,7 +18,6 @@
         <p class="score">Crystals: <span id="crystals">0</span></p>
         <p id="bonus-note" class="muted-text">Bonus: None</p>
         <p id="shop-boost-note" class="muted-text"></p>
-        <button id="switch-user-btn" class="alt-button" type="button">Logout / Switch User</button>
       </section>
 
       <section class="click-zone" id="click-zone">
@@ -39,7 +38,6 @@
       const activeRankEl = document.getElementById('active-rank');
       const bonusNoteEl = document.getElementById('bonus-note');
       const shopBoostNoteEl = document.getElementById('shop-boost-note');
-      const switchUserBtn = document.getElementById('switch-user-btn');
 
       let currentUser;
 
@@ -121,10 +119,6 @@
       });
 
 
-
-      switchUserBtn.addEventListener('click', () => {
-        switchUser();
-      });
 
       async function init() {
         currentUser = await ensureUser(true);

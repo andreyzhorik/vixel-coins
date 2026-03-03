@@ -196,23 +196,23 @@ async function ensureUser(required = false) {
 }
 
 async function setUsername(username) {
+  if (hasLockedUsername()) {
+    throw new Error('Username is already locked for this browser.');
+  }
+
   const clean = String(username || '').trim();
   if (!clean) {
     throw new Error('Username is required.');
   }
 
-  let user = await findUserByUsername(clean);
-  if (!user) {
-    user = await createUser(clean);
+  const existing = await findUserByUsername(clean);
+  if (existing) {
+    throw new Error('That username already exists. Choose a different username.');
   }
 
+  const user = await createUser(clean);
   saveSession(user);
   return user;
-}
-
-function switchUser() {
-  clearSession();
-  window.location.href = 'index.html';
 }
 
 function renderUserInfo(user, usernameEl, coinsEl) {
