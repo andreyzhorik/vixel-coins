@@ -22,8 +22,12 @@
       </section>
 
       <section class="panel left-panel">
-        <h2>Quick Info: Rank Chances</h2>
-        <div class="quick-grid" id="rank-chance-grid"></div>
+        <h2>Quick Info</h2>
+        <details class="details-card" open>
+          <summary>Show rank chances + rank bonuses</summary>
+          <div class="quick-grid" id="rank-chance-grid"></div>
+          <div class="quick-grid" id="rank-bonus-grid"></div>
+        </details>
       </section>
 
       <section class="panel left-panel">
@@ -118,11 +122,9 @@
       };
 
       const MINI_SHOP_ITEMS = [
-        { id: 'clicker-skin', label: 'Clicker Button Skin', cost: 100, note: 'Changes clicker button style for flair.' },
         { id: 'click-bonus-1m', label: 'Click Bonus 1 min', cost: 200, note: '+50% coins per click for 1 minute.' },
         { id: 'gamble-boost', label: 'Gamble Boost', cost: 300, note: '+10% payout on next gamble roll.' },
         { id: 'basic-crate-coins', label: 'Basic Crate', cost: 500, note: 'Open instantly with coins (smaller rewards).' },
-        { id: 'background-theme', label: 'Background Theme', cost: 1000, note: 'Switch to special arcade background.' },
         { id: 'coin-multiplier-1h', label: 'Coin Multiplier 1 hour', cost: 2000, note: '+25% coins per click for 1 hour.' },
       ];
 
@@ -132,6 +134,7 @@
       const rankEl = document.getElementById('current-rank');
       const crateGrid = document.getElementById('crate-grid');
       const rankChanceGrid = document.getElementById('rank-chance-grid');
+      const rankBonusGrid = document.getElementById('rank-bonus-grid');
       const coinShopGrid = document.getElementById('coin-shop-grid');
       const activeRankSelect = document.getElementById('active-rank-select');
       const rankBonusNote = document.getElementById('rank-bonus-note');
@@ -201,11 +204,12 @@
 
       function renderRankChances() {
         rankChanceGrid.innerHTML = '';
-        Object.values(CRATE_CONFIG).forEach((crate) => {
+        const cratesByCost = Object.values(CRATE_CONFIG).sort((a, b) => a.cost - b.cost);
+        cratesByCost.forEach((crate) => {
           const card = document.createElement('article');
           card.className = 'rank-chance-card';
           card.innerHTML = `
-            <h4>${crate.label}</h4>
+            <h4>${crate.label} (${crate.cost} crystals)</h4>
             <ul>
               ${crate.rankChances.map((entry) => `<li><span style="color:${getRankColor(entry.name)}">${entry.name}</span>: ${entry.chance}%</li>`).join('')}
             </ul>
@@ -214,10 +218,28 @@
         });
       }
 
+      function renderRankBonusInfo() {
+        rankBonusGrid.innerHTML = '';
+        const rankCards = [
+          { name: 'Vixel', text: 'No bonus.' },
+          { name: 'Wynix', text: 'Click reward +5%.' },
+          { name: 'Xivil', text: 'Crystal chance +5%.' },
+          { name: 'Yarel', text: 'Crate coin bonus +10%.' },
+          { name: 'Zyxel', text: 'Gambling payout +10%.' },
+        ];
+
+        rankCards.forEach((rank) => {
+          const card = document.createElement('article');
+          card.className = 'rank-chance-card';
+          card.innerHTML = `<h4 style="color:${getRankColor(rank.name)}">${rank.name}</h4><p>${rank.text}</p>`;
+          rankBonusGrid.appendChild(card);
+        });
+      }
+
       function renderCrates() {
         crateGrid.innerHTML = '';
 
-        const order = ['elite', 'premium', 'basic', 'legendary'];
+        const order = ['basic', 'premium', 'elite', 'legendary'];
         order.forEach((key) => {
           const crate = CRATE_CONFIG[key];
           const card = document.createElement('div');
@@ -398,10 +420,6 @@
           renderUserInfo(currentUser, usernameEl, coinsEl);
 
           switch (item.id) {
-            case 'clicker-skin':
-              localStorage.setItem(SHOP_EFFECT_KEYS.clickerSkin, 'neon');
-              await showShopPopup('Clicker Button Skin unlocked! Visit clicker page to see it.');
-              break;
             case 'click-bonus-1m':
               activateTimedEffect(SHOP_EFFECT_KEYS.clickBonusUntil, 60 * 1000);
               await showShopPopup('Click Bonus active: +50% coins per click for 1 minute.');
@@ -413,11 +431,6 @@
             }
             case 'basic-crate-coins':
               await openCoinBasicCrate();
-              break;
-            case 'background-theme':
-              localStorage.setItem(SHOP_EFFECT_KEYS.theme, 'arcade');
-              applySavedTheme();
-              await showShopPopup('Background theme changed to Arcade mode.');
               break;
             case 'coin-multiplier-1h':
               activateTimedEffect(SHOP_EFFECT_KEYS.coinMultiplierUntil, 60 * 60 * 1000);
@@ -467,6 +480,7 @@
         renderCurrentRank(currentUser.bestRank);
         renderRankSelector(currentUser);
         renderRankChances();
+        renderRankBonusInfo();
         renderCrates();
         renderMiniCoinShop();
 
