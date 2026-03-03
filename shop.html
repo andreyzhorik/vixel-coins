@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Shop</h1>
+      <p class="subtitle">Open crates with crystals or buy boosts with coins.</p>
+
+      <section class="panel">
+        <p class="score">User: <span id="username">-</span></p>
+        <p class="score">Coins: <span id="coins">0</span></p>
+        <p class="score">Crystals: <span id="crystals">0</span></p>
+        <p class="score">Best Rank: <span id="current-rank">Vixel</span></p>
+        <label for="active-rank-select" class="mini-title">Active Rank (change anytime)</label>
+        <select id="active-rank-select"></select>
+        <p id="rank-bonus-note" class="muted-text">Bonus: None</p>
+      </section>
+
+      <section class="panel left-panel">
+        <h2>Quick Info</h2>
+        <details class="details-card" open>
+          <summary>Show rank chances + rank bonuses</summary>
+          <div class="quick-grid" id="rank-chance-grid"></div>
+          <div class="quick-grid" id="rank-bonus-grid"></div>
+        </details>
+      </section>
+
+      <section class="panel left-panel">
+        <h2>Crates</h2>
+        <div class="crate-grid" id="crate-grid"></div>
+      </section>
+
+      <section class="panel left-panel">
+        <h2>Mini Coin Shop</h2>
+        <div class="coin-shop-grid" id="coin-shop-grid"></div>
+      </section>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <div id="crate-overlay" class="result-overlay hidden" aria-hidden="true">
+      <div id="crate-overlay-card" class="overlay-card crate-overlay-card">
+        <div id="crate-overlay-title" class="overlay-text">CRATE OPENED</div>
+        <img id="crate-overlay-image" class="loot-image crate-hero" src="assets/crate-basic.svg" alt="Crate" />
+        <p id="crate-overlay-subtext" class="overlay-subtext"></p>
+      </div>
+    </div>
+
+    <div id="shop-overlay" class="result-overlay hidden" aria-hidden="true">
+      <div id="shop-overlay-card" class="overlay-card">
+        <div id="shop-overlay-title" class="overlay-text">PURCHASE COMPLETE</div>
+        <p id="shop-overlay-subtext" class="overlay-subtext"></p>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      const CRYSTAL_KEY = 'vixelCrystals';
+
+      const CRATE_CONFIG = {
+        basic: {
+          label: 'Basic Crate',
+          image: 'assets/crate-basic.svg',
+          cost: 5,
+          minCoins: 20,
+          maxCoins: 60,
+          rankChances: [
+            { name: 'Vixel', chance: 50 },
+            { name: 'Wynix', chance: 25 },
+            { name: 'Xivil', chance: 15 },
+            { name: 'Yarel', chance: 8 },
+            { name: 'Zyxel', chance: 2 },
+          ],
+        },
+        premium: {
+          label: 'Premium Crate',
+          image: 'assets/crate-premium.svg',
+          cost: 20,
+          minCoins: 100,
+          maxCoins: 300,
+          rankChances: [
+            { name: 'Vixel', chance: 40 },
+            { name: 'Wynix', chance: 25 },
+            { name: 'Xivil', chance: 20 },
+            { name: 'Yarel', chance: 10 },
+            { name: 'Zyxel', chance: 5 },
+          ],
+        },
+        elite: {
+          label: 'Elite Crate',
+          image: 'assets/crate-elite.svg',
+          cost: 50,
+          minCoins: 400,
+          maxCoins: 900,
+          rankChances: [
+            { name: 'Vixel', chance: 30 },
+            { name: 'Wynix', chance: 25 },
+            { name: 'Xivil', chance: 25 },
+            { name: 'Yarel', chance: 15 },
+            { name: 'Zyxel', chance: 5 },
+          ],
+        },
+        legendary: {
+          label: 'Legendary Crate',
+          image: 'assets/crate-legendary.svg',
+          cost: 100,
+          minCoins: 1000,
+          maxCoins: 2500,
+          rankChances: [
+            { name: 'Vixel', chance: 20 },
+            { name: 'Wynix', chance: 20 },
+            { name: 'Xivil', chance: 25 },
+            { name: 'Yarel', chance: 20 },
+            { name: 'Zyxel', chance: 15 },
+          ],
+        },
+      };
+
+      const MINI_SHOP_ITEMS = [
+        { id: 'click-bonus-1m', label: 'Click Bonus 1 min', cost: 200, note: '+50% coins per click for 1 minute.' },
+        { id: 'gamble-boost', label: 'Gamble Boost', cost: 300, note: '+10% payout on next gamble roll.' },
+        { id: 'basic-crate-coins', label: 'Basic Crate', cost: 500, note: 'Open instantly with coins (smaller rewards).' },
+        { id: 'coin-multiplier-1h', label: 'Coin Multiplier 1 hour', cost: 2000, note: '+25% coins per click for 1 hour.' },
+      ];
+
+      const usernameEl = document.getElementById('username');
+      const coinsEl = document.getElementById('coins');
+      const crystalsEl = document.getElementById('crystals');
+      const rankEl = document.getElementById('current-rank');
+      const crateGrid = document.getElementById('crate-grid');
+      const rankChanceGrid = document.getElementById('rank-chance-grid');
+      const rankBonusGrid = document.getElementById('rank-bonus-grid');
+      const coinShopGrid = document.getElementById('coin-shop-grid');
+      const activeRankSelect = document.getElementById('active-rank-select');
+      const rankBonusNote = document.getElementById('rank-bonus-note');
+
+      const crateOverlay = document.getElementById('crate-overlay');
+      const crateOverlayCard = document.getElementById('crate-overlay-card');
+      const crateOverlayTitle = document.getElementById('crate-overlay-title');
+      const crateOverlayImage = document.getElementById('crate-overlay-image');
+      const crateOverlaySubtext = document.getElementById('crate-overlay-subtext');
+
+      const shopOverlay = document.getElementById('shop-overlay');
+      const shopOverlayCard = document.getElementById('shop-overlay-card');
+      const shopOverlayTitle = document.getElementById('shop-overlay-title');
+      const shopOverlaySubtext = document.getElementById('shop-overlay-subtext');
+
+      let currentUser;
+      let isOpening = false;
+
+      function getCrystals() {
+        return Number(localStorage.getItem(CRYSTAL_KEY) || 0);
+      }
+
+      function setCrystals(value) {
+        localStorage.setItem(CRYSTAL_KEY, String(value));
+        crystalsEl.textContent = value;
+      }
+
+      function randomInRange(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function rollRank(rankChances) {
+        const roll = Math.random() * 100;
+        let cumulative = 0;
+        for (const rank of rankChances) {
+          cumulative += rank.chance;
+          if (roll <= cumulative) return rank.name;
+        }
+        return rankChances[rankChances.length - 1].name;
+      }
+
+      function renderCurrentRank(rank) {
+        const normalized = normalizeRank(rank);
+        rankEl.textContent = normalized;
+        rankEl.style.color = getRankColor(normalized);
+      }
+
+      function renderRankSelector(user) {
+        const bestRank = normalizeRank(user.bestRank);
+        const activeRank = getActiveRank(user);
+        const options = getUnlockedRanks(bestRank);
+
+        activeRankSelect.innerHTML = '';
+        options.forEach((rank) => {
+          const option = document.createElement('option');
+          option.value = rank;
+          option.textContent = rank;
+          option.style.color = getRankColor(rank);
+          if (rank === activeRank) option.selected = true;
+          activeRankSelect.appendChild(option);
+        });
+
+        activeRankSelect.value = options.includes(activeRank) ? activeRank : bestRank;
+        activeRankSelect.style.color = getRankColor(activeRankSelect.value);
+        rankBonusNote.textContent = `Bonus: ${RANK_BONUSES[activeRankSelect.value]}`;
+      }
+
+      function renderRankChances() {
+        rankChanceGrid.innerHTML = '';
+        const cratesByCost = Object.values(CRATE_CONFIG).sort((a, b) => a.cost - b.cost);
+        cratesByCost.forEach((crate) => {
+          const card = document.createElement('article');
+          card.className = 'rank-chance-card';
+          card.innerHTML = `
+            <h4>${crate.label} (${crate.cost} crystals)</h4>
+            <ul>
+              ${crate.rankChances.map((entry) => `<li><span style="color:${getRankColor(entry.name)}">${entry.name}</span>: ${entry.chance}%</li>`).join('')}
+            </ul>
+          `;
+          rankChanceGrid.appendChild(card);
+        });
+      }
+
+      function renderRankBonusInfo() {
+        rankBonusGrid.innerHTML = '';
+        const rankCards = [
+          { name: 'Vixel', text: 'No bonus.' },
+          { name: 'Wynix', text: 'Click reward +5%.' },
+          { name: 'Xivil', text: 'Crystal chance +5%.' },
+          { name: 'Yarel', text: 'Crate coin bonus +10%.' },
+          { name: 'Zyxel', text: 'Gambling payout +10%.' },
+        ];
+
+        rankCards.forEach((rank) => {
+          const card = document.createElement('article');
+          card.className = 'rank-chance-card';
+          card.innerHTML = `<h4 style="color:${getRankColor(rank.name)}">${rank.name}</h4><p>${rank.text}</p>`;
+          rankBonusGrid.appendChild(card);
+        });
+      }
+
+      function renderCrates() {
+        crateGrid.innerHTML = '';
+
+        const order = ['basic', 'premium', 'elite', 'legendary'];
+        order.forEach((key) => {
+          const crate = CRATE_CONFIG[key];
+          const card = document.createElement('div');
+          card.className = 'tier-card crate-card';
+          card.innerHTML = `
+            <img class="crate-thumb" src="${crate.image}" alt="${crate.label}" />
+            <h4>${crate.label}</h4>
+            <p>Crystals: <strong>${crate.cost}</strong></p>
+            <p>Coins: <strong>${crate.minCoins}–${crate.maxCoins}</strong></p>
+            <button class="main-button" data-crate="${key}" type="button">Open ${crate.label}</button>
+          `;
+          crateGrid.appendChild(card);
+        });
+      }
+
+      function renderMiniCoinShop() {
+        coinShopGrid.innerHTML = '';
+        MINI_SHOP_ITEMS.forEach((item) => {
+          const card = document.createElement('article');
+          card.className = 'coin-item-card';
+          card.innerHTML = `
+            <h4>${item.label}</h4>
+            <p>${item.note}</p>
+            <p>Cost: <strong>${item.cost}</strong> coins</p>
+            <button class="main-button" type="button" data-item-id="${item.id}">Buy</button>
+          `;
+          coinShopGrid.appendChild(card);
+        });
+      }
+
+      function showOverlay({ overlay, card, titleEl, textEl, title, message, isError = false }) {
+        return new Promise((resolve) => {
+          const close = () => {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('overlay-win', 'overlay-loss');
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.removeEventListener('pointerdown', close);
+            resolve();
+          };
+
+          titleEl.textContent = title;
+          textEl.textContent = message;
+
+          overlay.classList.remove('hidden');
+          overlay.classList.add(isError ? 'overlay-loss' : 'overlay-win');
+          overlay.setAttribute('aria-hidden', 'false');
+
+          card.classList.remove('overlay-pop');
+          requestAnimationFrame(() => card.classList.add('overlay-pop'));
+
+          overlay.addEventListener('pointerdown', close, { once: true });
+        });
+      }
+
+      async function showCratePopup({ wonCoins, rankName, crateLabel, image, isError = false, message = '' }) {
+        crateOverlayImage.src = image;
+        await showOverlay({
+          overlay: crateOverlay,
+          card: crateOverlayCard,
+          titleEl: crateOverlayTitle,
+          textEl: crateOverlaySubtext,
+          title: isError ? 'NOT ENOUGH CRYSTALS' : `${crateLabel} OPENED`,
+          message: isError ? message : `+${wonCoins} coins • Rank: ${rankName}`,
+          isError,
+        });
+      }
+
+      async function showShopPopup(message, isError = false) {
+        await showOverlay({
+          overlay: shopOverlay,
+          card: shopOverlayCard,
+          titleEl: shopOverlayTitle,
+          textEl: shopOverlaySubtext,
+          title: isError ? 'PURCHASE FAILED' : 'PURCHASE COMPLETE',
+          message,
+          isError,
+        });
+      }
+
+      async function openCoinBasicCrate() {
+        const crate = CRATE_CONFIG.basic;
+        const activeRank = getActiveRank(currentUser);
+        const crateMultiplier = activeRank === 'Yarel' ? 1.10 : 1;
+        const baseCoins = randomInRange(10, 35);
+        const wonCoins = Math.round(baseCoins * crateMultiplier);
+        const rankName = rollRank(crate.rankChances);
+        const nextBestRank = getBestRank(currentUser.bestRank, rankName);
+
+        currentUser = await updateUser(currentUser.id, {
+          username: currentUser.username,
+          coins: Number(currentUser.coins || 0) + wonCoins,
+          bestRank: nextBestRank,
+          activeRank,
+        });
+
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderCurrentRank(currentUser.bestRank);
+        renderRankSelector(currentUser);
+
+        await showCratePopup({
+          wonCoins,
+          rankName,
+          crateLabel: 'Mini Basic Crate',
+          image: crate.image,
+        });
+      }
+
+      crateGrid.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-crate]');
+        if (!button || !currentUser || isOpening) return;
+
+        const crate = CRATE_CONFIG[button.dataset.crate];
+        const currentCrystals = getCrystals();
+
+        if (currentCrystals < crate.cost) {
+          await showCratePopup({
+            isError: true,
+            message: `Need ${crate.cost} crystals, you have ${currentCrystals}.`,
+            crateLabel: crate.label,
+            image: crate.image,
+          });
+          return;
+        }
+
+        isOpening = true;
+        try {
+          const baseCoins = randomInRange(crate.minCoins, crate.maxCoins);
+          const rankName = rollRank(crate.rankChances);
+          const activeRank = getActiveRank(currentUser);
+          const crateMultiplier = activeRank === 'Yarel' ? 1.10 : 1;
+          const wonCoins = Math.round(baseCoins * crateMultiplier);
+
+          setCrystals(currentCrystals - crate.cost);
+          const nextBestRank = getBestRank(currentUser.bestRank, rankName);
+          const nextCoins = Number(currentUser.coins || 0) + wonCoins;
+
+          currentUser = await updateUser(currentUser.id, {
+            username: currentUser.username,
+            coins: nextCoins,
+            bestRank: nextBestRank,
+            activeRank,
+          });
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderCurrentRank(currentUser.bestRank);
+
+          await showCratePopup({
+            wonCoins,
+            rankName,
+            crateLabel: crate.label,
+            image: crate.image,
+          });
+        } finally {
+          isOpening = false;
+        }
+      });
+
+      coinShopGrid.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-item-id]');
+        if (!button || !currentUser || isOpening) return;
+
+        const item = MINI_SHOP_ITEMS.find((entry) => entry.id === button.dataset.itemId);
+        if (!item) return;
+
+        const availableCoins = Number(currentUser.coins || 0);
+        if (availableCoins < item.cost) {
+          await showShopPopup(`Need ${item.cost} coins, you have ${availableCoins}.`, true);
+          return;
+        }
+
+        isOpening = true;
+        try {
+          currentUser = await updateUser(currentUser.id, {
+            username: currentUser.username,
+            coins: availableCoins - item.cost,
+            bestRank: normalizeRank(currentUser.bestRank),
+            activeRank: getActiveRank(currentUser),
+          });
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+
+          switch (item.id) {
+            case 'click-bonus-1m':
+              activateTimedEffect(SHOP_EFFECT_KEYS.clickBonusUntil, 60 * 1000);
+              await showShopPopup('Click Bonus active: +50% coins per click for 1 minute.');
+              break;
+            case 'gamble-boost': {
+              const charges = addGambleBoostCharge(1);
+              await showShopPopup(`Gamble Boost added. Boost charges: ${charges}.`);
+              break;
+            }
+            case 'basic-crate-coins':
+              await openCoinBasicCrate();
+              break;
+            case 'coin-multiplier-1h':
+              activateTimedEffect(SHOP_EFFECT_KEYS.coinMultiplierUntil, 60 * 60 * 1000);
+              await showShopPopup('Coin Multiplier active: +25% coins per click for 1 hour.');
+              break;
+            default:
+              await showShopPopup('Purchased.');
+          }
+        } finally {
+          isOpening = false;
+        }
+      });
+
+      activeRankSelect.addEventListener('change', async () => {
+        if (!currentUser) return;
+        const nextRank = activeRankSelect.value;
+        const unlocked = getUnlockedRanks(currentUser.bestRank);
+        if (!unlocked.includes(nextRank)) {
+          renderRankSelector(currentUser);
+          return;
+        }
+
+        currentUser = await updateUser(currentUser.id, {
+          username: currentUser.username,
+          coins: Number(currentUser.coins || 0),
+          bestRank: normalizeRank(currentUser.bestRank),
+          activeRank: nextRank,
+        });
+        renderRankSelector(currentUser);
+      });
+
+      async function init() {
+        currentUser = await ensureUser(true);
+        if (!currentUser) return;
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+        crystalsEl.textContent = getCrystals();
+
+        if (!currentUser.bestRank || !currentUser.activeRank) {
+          currentUser = await updateUser(currentUser.id, {
+            username: currentUser.username,
+            coins: Number(currentUser.coins || 0),
+            bestRank: normalizeRank(currentUser.bestRank),
+            activeRank: getActiveRank(currentUser),
+          });
+        }
+
+        renderCurrentRank(currentUser.bestRank);
+        renderRankSelector(currentUser);
+        renderRankChances();
+        renderRankBonusInfo();
+        renderCrates();
+        renderMiniCoinShop();
+
+        startUserCoinSync(currentUser.id, (latest) => {
+          currentUser = latest;
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderCurrentRank(currentUser.bestRank);
+          renderRankSelector(currentUser);
+        }, 2000);
+      }
+
+      init();
+    </script>
+  </body>
+</html>

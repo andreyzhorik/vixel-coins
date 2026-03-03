@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gamble</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Gamble</h1>
+      <p class="subtitle">Simple mode: pick risk, pick bet, roll.</p>
+
+      <section class="panel">
+        <p class="score">User: <span id="username">-</span></p>
+        <p class="score">Coins: <span id="coins">0</span></p>
+        <p class="score">Active Rank: <span id="active-rank">Vixel</span></p>
+        <p id="bonus-note" class="muted-text">Bonus: None</p>
+        <p id="shop-gamble-note" class="muted-text"></p>
+      </section>
+
+      <section class="panel left-panel">
+        <h2>Quick Info</h2>
+        <p class="muted-text">House Edge Target: 5% • Expected Return: 0.95 per 1 coin bet</p>
+
+        <details class="details-card">
+          <summary>Show Win Chart</summary>
+          <div class="tier-grid">
+            <article class="tier-card">
+              <h4>Tier 1 – Safe</h4>
+              <p>Win: 80% • Payout: 1.18x</p>
+            </article>
+
+            <article class="tier-card">
+              <h4>Tier 2 – Medium</h4>
+              <p>Win: 47.5% • Payout: 2x</p>
+            </article>
+
+            <article class="tier-card">
+              <h4>Tier 3 – High Risk</h4>
+              <p>Win: 19% • Payout: 5x</p>
+            </article>
+
+            <article class="tier-card">
+              <h4>Tier 4 – Extreme</h4>
+              <p>Win: 4% • Payout: 20x</p>
+            </article>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel left-panel">
+        <h3 class="mini-title">Place Bet</h3>
+        <form id="bet-form" class="stack">
+          <label for="tier-select">Risk Tier</label>
+          <select id="tier-select" required>
+            <option value="safe">Tier 1 – Safe (80%, 1.18x)</option>
+            <option value="medium" selected>Tier 2 – Medium (47.5%, 2x)</option>
+            <option value="high">Tier 3 – High Risk (19%, 5x)</option>
+            <option value="extreme">Tier 4 – Extreme (4%, 20x)</option>
+          </select>
+
+          <label for="bet-amount">Bet Amount (whole coins)</label>
+          <input id="bet-amount" type="number" min="1" step="1" placeholder="Enter bet amount" required />
+
+          <button id="gamble-btn" class="main-button" type="submit">Roll Bet</button>
+        </form>
+        <p id="result" class="result"></p>
+      </section>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <div id="result-overlay" class="result-overlay hidden" aria-live="polite" aria-hidden="true">
+      <div id="overlay-card" class="overlay-card">
+        <div id="overlay-text" class="overlay-text">YOU WIN</div>
+        <p id="overlay-subtext" class="overlay-subtext">Result message</p>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      const TIERS = {
+        safe: { name: 'Tier 1 – Safe', winChance: 0.8, payout: 1.18 },
+        medium: { name: 'Tier 2 – Medium', winChance: 0.475, payout: 2 },
+        high: { name: 'Tier 3 – High Risk', winChance: 0.19, payout: 5 },
+        extreme: { name: 'Tier 4 – Extreme', winChance: 0.04, payout: 20 },
+      };
+
+      const usernameEl = document.getElementById('username');
+      const coinsEl = document.getElementById('coins');
+      const betForm = document.getElementById('bet-form');
+      const tierSelect = document.getElementById('tier-select');
+      const betAmountInput = document.getElementById('bet-amount');
+      const resultEl = document.getElementById('result');
+      const resultOverlay = document.getElementById('result-overlay');
+      const overlayText = document.getElementById('overlay-text');
+      const overlaySubtext = document.getElementById('overlay-subtext');
+      const overlayCard = document.getElementById('overlay-card');
+      const activeRankEl = document.getElementById('active-rank');
+      const bonusNoteEl = document.getElementById('bonus-note');
+      const shopGambleNoteEl = document.getElementById('shop-gamble-note');
+
+      let currentUser;
+      let rollLocked = false;
+
+      function showResultPopup({ won, message }) {
+        return new Promise((resolve) => {
+          let completed = false;
+
+          const cleanup = () => {
+            if (completed) return;
+            completed = true;
+            resultOverlay.classList.add('hidden');
+            resultOverlay.setAttribute('aria-hidden', 'true');
+            resultOverlay.classList.remove('overlay-win', 'overlay-loss');
+            resultOverlay.removeEventListener('pointerdown', onTouchOrClick);
+            resolve();
+          };
+
+          const onTouchOrClick = () => cleanup();
+
+          overlayText.textContent = won ? 'YOU WIN' : 'YOU LOSE';
+          overlaySubtext.textContent = message;
+          resultEl.textContent = message;
+
+          resultOverlay.classList.remove('hidden');
+          resultOverlay.setAttribute('aria-hidden', 'false');
+          resultOverlay.classList.add(won ? 'overlay-win' : 'overlay-loss');
+
+          overlayCard.classList.remove('overlay-pop');
+          requestAnimationFrame(() => {
+            overlayCard.classList.add('overlay-pop');
+          });
+
+          resultOverlay.addEventListener('pointerdown', onTouchOrClick, { once: true });
+        });
+      }
+
+
+      function renderActiveRank(user) {
+        const rank = getActiveRank(user);
+        activeRankEl.textContent = rank;
+        activeRankEl.style.color = getRankColor(rank);
+        bonusNoteEl.textContent = `Bonus: ${RANK_BONUSES[rank]}`;
+      }
+
+      function renderShopGambleBoost() {
+        const charges = getShopEffect(SHOP_EFFECT_KEYS.gambleBoostCharges, 0);
+        shopGambleNoteEl.textContent = `Mini-shop gamble boosts: ${charges}`;
+      }
+
+      function parseValidBet(value, availableCoins) {
+        const bet = Number(value);
+
+        if (!Number.isFinite(bet) || !Number.isInteger(bet)) {
+          return { valid: false, error: 'Bet must be a whole number.' };
+        }
+        if (bet < 1) {
+          return { valid: false, error: 'Bet must be at least 1 coin.' };
+        }
+        if (bet > availableCoins) {
+          return { valid: false, error: 'Bet cannot be more than your current coins.' };
+        }
+
+        return { valid: true, bet };
+      }
+
+      betForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!currentUser || rollLocked) return;
+
+        const availableCoins = Number(currentUser.coins || 0);
+        const validation = parseValidBet(betAmountInput.value, availableCoins);
+        if (!validation.valid) {
+          resultEl.textContent = validation.error;
+          return;
+        }
+
+        rollLocked = true;
+        try {
+          const tier = TIERS[tierSelect.value];
+          const didWin = Math.random() < tier.winChance;
+          const bet = validation.bet;
+
+          let nextCoins = availableCoins - bet;
+          let message;
+
+          const hasShopBoost = consumeGambleBoostCharge();
+
+          if (didWin) {
+            const rank = getActiveRank(currentUser);
+            const rankMultiplier = rank === 'Zyxel' ? 1.10 : 1;
+            const shopMultiplier = hasShopBoost ? 1.10 : 1;
+            const payoutTotal = Math.max(bet, Math.round(bet * tier.payout * rankMultiplier * shopMultiplier));
+            nextCoins += payoutTotal;
+            const profit = payoutTotal - bet;
+            message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).${hasShopBoost ? ' Mini-shop boost used.' : ''}`;
+          } else {
+            message = `${tier.name}: You lost ${bet} coins.${hasShopBoost ? ' Mini-shop boost used.' : ''}`;
+          }
+
+          currentUser = await updateCoins(currentUser.id, nextCoins);
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderActiveRank(currentUser);
+          renderShopGambleBoost();
+          await showResultPopup({ won: didWin, message });
+        } finally {
+          rollLocked = false;
+        }
+      });
+
+
+      async function init() {
+        currentUser = await ensureUser(true);
+        if (!currentUser) return;
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderActiveRank(currentUser);
+        renderShopGambleBoost();
+
+        startUserCoinSync(currentUser.id, (latest) => {
+          currentUser = latest;
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderActiveRank(currentUser);
+          renderShopGambleBoost();
+        }, 2000);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
