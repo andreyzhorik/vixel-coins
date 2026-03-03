@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Shop</h1>
+      <p class="subtitle">Open crates and collect items.</p>
+
+      <section class="panel">
+        <p class="score">User: <span id="username">-</span></p>
+        <p class="score">Coins: <span id="coins">0</span></p>
+      </section>
+
+      <section class="panel left-panel">
+        <h2>Crates</h2>
+        <div class="crate-grid" id="crate-grid"></div>
+      </section>
+
+      <section class="panel left-panel">
+        <h2>Your Items (local storage)</h2>
+        <div class="inventory-grid" id="inventory-grid"></div>
+      </section>
+
+      <a class="back-link" href="index.html">← Back to Main</a>
+    </main>
+
+    <div id="crate-overlay" class="result-overlay hidden" aria-hidden="true">
+      <div id="crate-overlay-card" class="overlay-card crate-overlay-card">
+        <div id="crate-overlay-title" class="overlay-text">CRATE OPENED</div>
+        <img id="crate-overlay-image" class="loot-image" src="assets/vixel.svg" alt="Loot item" />
+        <p id="crate-overlay-subtext" class="overlay-subtext"></p>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      const CRATE_CONFIG = {
+        basic: {
+          label: 'Basic Crate',
+          cost: 5,
+          minCoins: 20,
+          maxCoins: 60,
+          drops: [
+            { name: 'Vixel', chance: 50, image: 'assets/vixel.svg' },
+            { name: 'Wynix', chance: 25, image: 'assets/wynix.svg' },
+            { name: 'Xivil', chance: 15, image: 'assets/xivil.svg' },
+            { name: 'Yarel', chance: 8, image: 'assets/yarel.svg' },
+            { name: 'Zyxel', chance: 2, image: 'assets/zyxel.svg' },
+          ],
+        },
+        premium: {
+          label: 'Premium Crate',
+          cost: 20,
+          minCoins: 100,
+          maxCoins: 300,
+          drops: [
+            { name: 'Vixel', chance: 40, image: 'assets/vixel.svg' },
+            { name: 'Wynix', chance: 25, image: 'assets/wynix.svg' },
+            { name: 'Xivil', chance: 20, image: 'assets/xivil.svg' },
+            { name: 'Yarel', chance: 10, image: 'assets/yarel.svg' },
+            { name: 'Zyxel', chance: 5, image: 'assets/zyxel.svg' },
+          ],
+        },
+        elite: {
+          label: 'Elite Crate',
+          cost: 50,
+          minCoins: 400,
+          maxCoins: 900,
+          drops: [
+            { name: 'Vixel', chance: 30, image: 'assets/vixel.svg' },
+            { name: 'Wynix', chance: 25, image: 'assets/wynix.svg' },
+            { name: 'Xivil', chance: 25, image: 'assets/xivil.svg' },
+            { name: 'Yarel', chance: 15, image: 'assets/yarel.svg' },
+            { name: 'Zyxel', chance: 5, image: 'assets/zyxel.svg' },
+          ],
+        },
+        legendary: {
+          label: 'Legendary Crate',
+          cost: 100,
+          minCoins: 1000,
+          maxCoins: 2500,
+          drops: [
+            { name: 'Vixel', chance: 20, image: 'assets/vixel.svg' },
+            { name: 'Wynix', chance: 20, image: 'assets/wynix.svg' },
+            { name: 'Xivil', chance: 25, image: 'assets/xivil.svg' },
+            { name: 'Yarel', chance: 20, image: 'assets/yarel.svg' },
+            { name: 'Zyxel', chance: 15, image: 'assets/zyxel.svg' },
+          ],
+        },
+      };
+
+      const ITEM_KEY = 'vixelShopItems';
+      const usernameEl = document.getElementById('username');
+      const coinsEl = document.getElementById('coins');
+      const crateGrid = document.getElementById('crate-grid');
+      const inventoryGrid = document.getElementById('inventory-grid');
+      const crateOverlay = document.getElementById('crate-overlay');
+      const crateOverlayCard = document.getElementById('crate-overlay-card');
+      const crateOverlayTitle = document.getElementById('crate-overlay-title');
+      const crateOverlayImage = document.getElementById('crate-overlay-image');
+      const crateOverlaySubtext = document.getElementById('crate-overlay-subtext');
+
+      let currentUser;
+      let isOpening = false;
+
+      function readItems() {
+        try {
+          return JSON.parse(localStorage.getItem(ITEM_KEY) || '{}');
+        } catch {
+          return {};
+        }
+      }
+
+      function writeItems(items) {
+        localStorage.setItem(ITEM_KEY, JSON.stringify(items));
+      }
+
+      function addItem(itemName) {
+        const items = readItems();
+        items[itemName] = (items[itemName] || 0) + 1;
+        writeItems(items);
+      }
+
+      function renderInventory() {
+        const items = readItems();
+        inventoryGrid.innerHTML = '';
+
+        const allItemNames = ['Vixel', 'Wynix', 'Xivil', 'Yarel', 'Zyxel'];
+        allItemNames.forEach((name) => {
+          const count = items[name] || 0;
+          const card = document.createElement('div');
+          card.className = 'inventory-card';
+          card.innerHTML = `<img class="inventory-icon" src="assets/${name.toLowerCase()}.svg" alt="${name}"/><span>${name}</span><strong>x${count}</strong>`;
+          inventoryGrid.appendChild(card);
+        });
+      }
+
+      function renderCrates() {
+        crateGrid.innerHTML = '';
+        Object.entries(CRATE_CONFIG).forEach(([key, crate]) => {
+          const card = document.createElement('div');
+          card.className = 'tier-card';
+          card.innerHTML = `
+            <h4>${crate.label}</h4>
+            <p>Cost: <strong>${crate.cost}</strong></p>
+            <p>Reward: <strong>${crate.minCoins}–${crate.maxCoins} coins</strong></p>
+            <button class="main-button" data-crate="${key}" type="button">Open</button>
+          `;
+          crateGrid.appendChild(card);
+        });
+      }
+
+      function randomInRange(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function rollItem(crate) {
+        const roll = Math.random() * 100;
+        let cumulative = 0;
+        for (const drop of crate.drops) {
+          cumulative += drop.chance;
+          if (roll <= cumulative) return drop;
+        }
+        return crate.drops[crate.drops.length - 1];
+      }
+
+      function showCratePopup({ wonCoins, item }) {
+        return new Promise((resolve) => {
+          let done = false;
+
+          const cleanup = () => {
+            if (done) return;
+            done = true;
+            crateOverlay.classList.add('hidden');
+            crateOverlay.classList.remove('overlay-win');
+            crateOverlay.setAttribute('aria-hidden', 'true');
+            crateOverlay.removeEventListener('pointerdown', cleanup);
+            resolve();
+          };
+
+          crateOverlayTitle.textContent = 'CRATE OPENED';
+          crateOverlayImage.src = item.image;
+          crateOverlayImage.alt = item.name;
+          crateOverlaySubtext.textContent = `You got ${item.name} + ${wonCoins} coins`;
+
+          crateOverlay.classList.remove('hidden');
+          crateOverlay.classList.add('overlay-win');
+          crateOverlay.setAttribute('aria-hidden', 'false');
+
+          crateOverlayCard.classList.remove('overlay-pop');
+          requestAnimationFrame(() => crateOverlayCard.classList.add('overlay-pop'));
+
+          crateOverlay.addEventListener('pointerdown', cleanup, { once: true });
+        });
+      }
+
+      crateGrid.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-crate]');
+        if (!button || !currentUser || isOpening) return;
+
+        const crate = CRATE_CONFIG[button.dataset.crate];
+        const currentCoins = Number(currentUser.coins || 0);
+        if (currentCoins < crate.cost) {
+          crateOverlayTitle.textContent = 'NOT ENOUGH COINS';
+          crateOverlayImage.src = 'assets/zyxel.svg';
+          crateOverlaySubtext.textContent = `You need ${crate.cost} coins to open ${crate.label}.`;
+          crateOverlay.classList.remove('hidden');
+          crateOverlay.classList.add('overlay-loss');
+          crateOverlay.setAttribute('aria-hidden', 'false');
+          crateOverlay.addEventListener('pointerdown', () => {
+            crateOverlay.classList.add('hidden');
+            crateOverlay.classList.remove('overlay-loss');
+            crateOverlay.setAttribute('aria-hidden', 'true');
+          }, { once: true });
+          return;
+        }
+
+        isOpening = true;
+        try {
+          const item = rollItem(crate);
+          const wonCoins = randomInRange(crate.minCoins, crate.maxCoins);
+          const nextCoins = currentCoins - crate.cost + wonCoins;
+
+          currentUser = await updateCoins(currentUser.id, nextCoins);
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+
+          addItem(item.name);
+          renderInventory();
+          await showCratePopup({ wonCoins, item });
+        } finally {
+          isOpening = false;
+        }
+      });
+
+      async function init() {
+        currentUser = await ensureUser(true);
+        renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderCrates();
+        renderInventory();
+
+        startUserCoinSync(currentUser.id, (latest) => {
+          currentUser = latest;
+          renderUserInfo(currentUser, usernameEl, coinsEl);
+        }, 2000);
+      }
+
+      init();
+    </script>
+  </body>
+</html>

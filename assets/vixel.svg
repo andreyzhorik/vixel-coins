@@ -1,0 +1,6 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'>
+  <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#ff95ab'/><stop offset='1' stop-color='#ff4f78'/></linearGradient></defs>
+  <rect width='128' height='128' rx='24' fill='#3f0a16'/>
+  <circle cx='64' cy='64' r='38' fill='url(#g)'/>
+  <text x='64' y='73' font-size='34' text-anchor='middle' fill='white' font-family='Arial' font-weight='700'>V</text>
+</svg>

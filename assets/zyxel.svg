@@ -1,0 +1,5 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'>
+  <rect width='128' height='128' rx='24' fill='#3f0a16'/>
+  <path d='M24 30h80v18L48 98h56v18H24V98l56-50H24z' fill='#ffd24f'/>
+  <text x='64' y='73' font-size='34' text-anchor='middle' fill='#5f4700' font-family='Arial' font-weight='700'>Z</text>
+</svg>
