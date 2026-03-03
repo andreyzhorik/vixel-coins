@@ -13,6 +13,14 @@ const RANK_COLORS = {
   Zyxel: '#FFC107',
 };
 
+const RANK_BONUSES = {
+  Vixel: 'None',
+  Wynix: 'Click Reward +5%',
+  Xivil: 'Crystal Chance +5%',
+  Yarel: 'Crate Coin Bonus +10%',
+  Zyxel: 'Gambling Payout +10%',
+};
+
 function getSession() {
   return {
     userId: localStorage.getItem(STORAGE_KEYS.userId),
@@ -52,6 +60,15 @@ function getRankColor(rank) {
   return RANK_COLORS[normalizeRank(rank)] || RANK_COLORS.Vixel;
 }
 
+function getActiveRank(user) {
+  return normalizeRank(user?.activeRank || user?.bestRank || 'Vixel');
+}
+
+function getUnlockedRanks(bestRank) {
+  const bestTier = getRankTier(bestRank);
+  return RANK_ORDER.filter((_, index) => index <= bestTier);
+}
+
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -69,7 +86,7 @@ async function createUser(username) {
   return fetchJson(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, coins: 0, bestRank: 'Vixel' }),
+    body: JSON.stringify({ username, coins: 0, bestRank: 'Vixel', activeRank: 'Vixel' }),
   });
 }
 
@@ -91,6 +108,7 @@ async function updateCoins(userId, coins) {
     username: user.username,
     coins,
     bestRank: normalizeRank(user.bestRank),
+    activeRank: getActiveRank(user),
   });
 }
 

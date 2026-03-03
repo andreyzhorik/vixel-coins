@@ -16,6 +16,9 @@
         <p class="score">Coins: <span id="coins">0</span></p>
         <p class="score">Crystals: <span id="crystals">0</span></p>
         <p class="score">Best Rank: <span id="current-rank">Vixel</span></p>
+        <label for="active-rank-select" class="mini-title">Active Rank (change anytime)</label>
+        <select id="active-rank-select"></select>
+        <p id="rank-bonus-note" class="muted-text">Bonus: None</p>
       </section>
 
       <section class="panel left-panel">
@@ -102,6 +105,8 @@
       const crystalsEl = document.getElementById('crystals');
       const rankEl = document.getElementById('current-rank');
       const crateGrid = document.getElementById('crate-grid');
+      const activeRankSelect = document.getElementById('active-rank-select');
+      const rankBonusNote = document.getElementById('rank-bonus-note');
 
       const crateOverlay = document.getElementById('crate-overlay');
       const crateOverlayCard = document.getElementById('crate-overlay-card');
@@ -125,6 +130,27 @@
         const normalized = normalizeRank(rank);
         rankEl.textContent = normalized;
         rankEl.style.color = getRankColor(normalized);
+      }
+
+
+      function renderRankSelector(user) {
+        const bestRank = normalizeRank(user.bestRank);
+        const activeRank = getActiveRank(user);
+        const options = getUnlockedRanks(bestRank);
+
+        activeRankSelect.innerHTML = '';
+        options.forEach((rank) => {
+          const option = document.createElement('option');
+          option.value = rank;
+          option.textContent = rank;
+          option.style.color = getRankColor(rank);
+          if (rank === activeRank) option.selected = true;
+          activeRankSelect.appendChild(option);
+        });
+
+        activeRankSelect.value = options.includes(activeRank) ? activeRank : bestRank;
+        activeRankSelect.style.color = getRankColor(activeRankSelect.value);
+        rankBonusNote.textContent = `Bonus: ${RANK_BONUSES[activeRankSelect.value]}`;
       }
 
       function randomInRange(min, max) {
@@ -204,8 +230,11 @@
 
         isOpening = true;
         try {
-          const wonCoins = randomInRange(crate.minCoins, crate.maxCoins);
+          const baseCoins = randomInRange(crate.minCoins, crate.maxCoins);
           const rankName = rollRank(crate.rankChances);
+          const activeRank = getActiveRank(currentUser);
+          const crateMultiplier = activeRank === 'Yarel' ? 1.10 : 1;
+          const wonCoins = Math.round(baseCoins * crateMultiplier);
 
           setCrystals(currentCrystals - crate.cost);
           const nextBestRank = getBestRank(currentUser.bestRank, rankName);
@@ -215,6 +244,7 @@
             username: currentUser.username,
             coins: nextCoins,
             bestRank: nextBestRank,
+            activeRank: getActiveRank(currentUser),
           });
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderCurrentRank(currentUser.bestRank);
@@ -230,25 +260,46 @@
         }
       });
 
+      activeRankSelect.addEventListener('change', async () => {
+        if (!currentUser) return;
+        const nextRank = activeRankSelect.value;
+        const unlocked = getUnlockedRanks(currentUser.bestRank);
+        if (!unlocked.includes(nextRank)) {
+          renderRankSelector(currentUser);
+          return;
+        }
+
+        currentUser = await updateUser(currentUser.id, {
+          username: currentUser.username,
+          coins: Number(currentUser.coins || 0),
+          bestRank: normalizeRank(currentUser.bestRank),
+          activeRank: nextRank,
+        });
+        renderRankSelector(currentUser);
+      });
+
       async function init() {
         currentUser = await ensureUser(true);
         if (!currentUser) return;
         renderUserInfo(currentUser, usernameEl, coinsEl);
         crystalsEl.textContent = getCrystals();
-        if (!currentUser.bestRank) {
+        if (!currentUser.bestRank || !currentUser.activeRank) {
           currentUser = await updateUser(currentUser.id, {
             username: currentUser.username,
             coins: Number(currentUser.coins || 0),
-            bestRank: 'Vixel',
+            bestRank: normalizeRank(currentUser.bestRank),
+            activeRank: getActiveRank(currentUser),
           });
         }
         renderCurrentRank(currentUser.bestRank);
+        renderRankSelector(currentUser);
         renderCrates();
 
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
           renderUserInfo(currentUser, usernameEl, coinsEl);
           renderCurrentRank(currentUser.bestRank);
+          renderRankSelector(currentUser);
         }, 2000);
       }
 

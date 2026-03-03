@@ -14,8 +14,9 @@
       <section class="panel">
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
+        <p class="score">Active Rank: <span id="active-rank">Vixel</span></p>
         <p class="score">Crystals: <span id="crystals">0</span></p>
-        <p class="muted-text">5% chance to get 1 crystal per click (saved in local storage).</p>
+        <p id="bonus-note" class="muted-text">Bonus: None</p>
       </section>
 
       <section class="click-zone" id="click-zone">
@@ -33,6 +34,8 @@
       const clickZone = document.getElementById('click-zone');
       const CRYSTAL_KEY = 'vixelCrystals';
       const crystalsEl = document.getElementById('crystals');
+      const activeRankEl = document.getElementById('active-rank');
+      const bonusNoteEl = document.getElementById('bonus-note');
 
       let currentUser;
 
@@ -70,15 +73,25 @@
         return Math.round(value * 10) / 10;
       }
 
+      function renderActiveRank(user) {
+        const rank = getActiveRank(user);
+        activeRankEl.textContent = rank;
+        activeRankEl.style.color = getRankColor(rank);
+        bonusNoteEl.textContent = `Bonus: ${RANK_BONUSES[rank]}`;
+      }
+
       clickBtn.addEventListener('click', async () => {
         if (!currentUser) return;
         const currentCoins = Number(currentUser.coins || 0);
-        const reward = getClickReward(currentCoins);
+        const rank = getActiveRank(currentUser);
+        const rewardMultiplier = rank === 'Wynix' ? 1.05 : 1;
+        const reward = getClickReward(currentCoins) * rewardMultiplier;
         const nextCoins = roundCoins(currentCoins + reward);
         currentUser = await updateCoins(currentUser.id, nextCoins);
         renderUserInfo(currentUser, usernameEl, coinsEl);
 
-        if (Math.random() < 0.05) {
+        const crystalChance = getActiveRank(currentUser) === 'Xivil' ? 0.10 : 0.05;
+        if (Math.random() < crystalChance) {
           const nextCrystals = getCrystals() + 1;
           setCrystals(nextCrystals);
         }
@@ -98,12 +111,15 @@
 
       async function init() {
         currentUser = await ensureUser(true);
+        if (!currentUser) return;
         renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderActiveRank(currentUser);
         crystalsEl.textContent = getCrystals();
 
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderActiveRank(currentUser);
         }, 2000);
 
         moveButtonRandom();

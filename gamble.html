@@ -14,7 +14,8 @@
       <section class="panel">
         <p class="score">User: <span id="username">-</span></p>
         <p class="score">Coins: <span id="coins">0</span></p>
-        <p class="muted-text">Coins auto-refresh every 2 seconds.</p>
+        <p class="score">Active Rank: <span id="active-rank">Vixel</span></p>
+        <p id="bonus-note" class="muted-text">Bonus: None</p>
       </section>
 
       <section class="panel left-panel">
@@ -95,6 +96,8 @@
       const overlayText = document.getElementById('overlay-text');
       const overlaySubtext = document.getElementById('overlay-subtext');
       const overlayCard = document.getElementById('overlay-card');
+      const activeRankEl = document.getElementById('active-rank');
+      const bonusNoteEl = document.getElementById('bonus-note');
 
       let currentUser;
       let rollLocked = false;
@@ -130,6 +133,14 @@
 
           resultOverlay.addEventListener('pointerdown', onTouchOrClick, { once: true });
         });
+      }
+
+
+      function renderActiveRank(user) {
+        const rank = getActiveRank(user);
+        activeRankEl.textContent = rank;
+        activeRankEl.style.color = getRankColor(rank);
+        bonusNoteEl.textContent = `Bonus: ${RANK_BONUSES[rank]}`;
       }
 
       function parseValidBet(value, availableCoins) {
@@ -169,7 +180,9 @@
           let message;
 
           if (didWin) {
-            const payoutTotal = Math.max(bet, Math.round(bet * tier.payout));
+            const rank = getActiveRank(currentUser);
+            const payoutMultiplier = rank === 'Zyxel' ? 1.10 : 1;
+            const payoutTotal = Math.max(bet, Math.round(bet * tier.payout * payoutMultiplier));
             nextCoins += payoutTotal;
             const profit = payoutTotal - bet;
             message = `${tier.name}: You WON! Returned ${payoutTotal} (profit +${profit}).`;
@@ -179,6 +192,7 @@
 
           currentUser = await updateCoins(currentUser.id, nextCoins);
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderActiveRank(currentUser);
           await showResultPopup({ won: didWin, message });
         } finally {
           rollLocked = false;
@@ -187,11 +201,14 @@
 
       async function init() {
         currentUser = await ensureUser(true);
+        if (!currentUser) return;
         renderUserInfo(currentUser, usernameEl, coinsEl);
+        renderActiveRank(currentUser);
 
         startUserCoinSync(currentUser.id, (latest) => {
           currentUser = latest;
           renderUserInfo(currentUser, usernameEl, coinsEl);
+          renderActiveRank(currentUser);
         }, 2000);
       }
 
